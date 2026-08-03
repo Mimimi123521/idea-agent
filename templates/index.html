@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<meta name="theme-color" content="#7c3aed">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+<title>灵感管家</title>
+<style>
+:root {
+  --brand: #7c3aed; --brand-light: #a78bfa; --brand-dark: #5b21b6;
+  --bg: #f8f9fc; --surface: #ffffff; --ink: #1a2332; --muted: #6b7a8e;
+  --border: #e5e8f0; --shadow: 0 1px 3px rgba(0,0,0,.08);
+  --radius: 10px; --radius-lg: 16px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --nav-height: 64px; --input-height: 64px;
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;}
+
+/* ====== App Shell ====== */
+.app{display:flex;flex-direction:column;height:100%;max-width:480px;margin:0 auto;position:relative;}
+.app-header{flex-shrink:0;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;z-index:10;}
+.app-header h1{font-size:18px;font-weight:700;display:flex;align-items:center;gap:8px;}
+.app-header h1 .dot{width:8px;height:8px;border-radius:50%;background:#10b981;display:inline-block;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.header-actions{display:flex;gap:8px;}
+.header-btn{width:36px;height:36px;border-radius:50%;border:none;background:var(--bg);color:var(--muted);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+.header-btn:active{transform:scale(.92);background:var(--border);}
+
+/* ====== Tabs ====== */
+.tab-bar{flex-shrink:0;display:flex;background:var(--surface);border-bottom:1px solid var(--border);padding:0 8px;overflow-x:auto;scrollbar-width:none;}
+.tab-bar::-webkit-scrollbar{display:none;}
+.tab-btn{flex-shrink:0;padding:10px 14px;font-size:13px;font-weight:500;color:var(--muted);border:none;background:none;cursor:pointer;position:relative;transition:color .2s;white-space:nowrap;}
+.tab-btn.active{color:var(--brand);}
+.tab-btn.active::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:20px;height:3px;border-radius:2px;background:var(--brand);}
+.tab-btn .count{display:inline-block;margin-left:4px;font-size:11px;background:var(--bg);padding:1px 6px;border-radius:8px;color:var(--muted);}
+.tab-btn.active .count{background:#ede9fe;color:var(--brand);}
+
+/* ====== Content Area ====== */
+.content-area{flex:1;overflow-y:auto;overflow-x:hidden;padding:8px 12px 4px;scroll-behavior:smooth;}
+.content-area::-webkit-scrollbar{width:4px;}
+.content-area::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+/* ====== Idea Cards ====== */
+.idea-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:10px;box-shadow:var(--shadow);transition:transform .15s,box-shadow .15s;cursor:pointer;position:relative;}
+.idea-card:active{transform:scale(.98);box-shadow:0 1px 2px rgba(0,0,0,.05);}
+.idea-card .card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px;}
+.idea-card .card-id{font-size:11px;color:var(--muted);font-weight:500;}
+.idea-card .card-time{font-size:11px;color:var(--muted);white-space:nowrap;}
+.idea-card .card-content{font-size:14px;line-height:1.6;margin-bottom:10px;word-break:break-word;}
+.idea-card .card-bottom{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+.idea-card .tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--bg);color:var(--muted);border:1px solid var(--border);}
+.idea-card .tag.work{background:#ede9fe;color:var(--brand);border-color:var(--brand-light);}
+.idea-card .tag.life{background:#fef3c7;color:#92400e;border-color:#f59e0b;}
+.idea-card .tag.process{background:#cffafe;color:#155e75;border-color:#06b6d4;}
+.idea-card .tag.other{background:#d1fae5;color:#065f46;border-color:#10b981;}
+.idea-card .decision-badge{font-size:11px;padding:2px 10px;border-radius:999px;font-weight:600;}
+.idea-card .decision-badge.todo-work{background:#ede9fe;color:var(--brand);}
+.idea-card .decision-badge.todo-life{background:#fef3c7;color:#92400e;}
+.idea-card .decision-badge.stash{background:#f3f4f6;color:var(--muted);}
+.idea-card .decision-badge.archive{background:#f3f4f6;color:#9ca3af;}
+.idea-card .card-actions{position:absolute;top:8px;right:8px;opacity:0;transition:opacity .2s;}
+.idea-card:hover .card-actions,.idea-card:active .card-actions{opacity:1;}
+.idea-card .card-actions button{width:28px;height:28px;border:none;border-radius:50%;background:var(--bg);color:var(--muted);font-size:14px;cursor:pointer;}
+
+/* ====== Empty State ====== */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;text-align:center;color:var(--muted);}
+.empty-state .icon{font-size:48px;margin-bottom:16px;opacity:.5;}
+.empty-state h3{font-size:16px;font-weight:600;margin-bottom:8px;color:var(--ink);}
+.empty-state p{font-size:13px;line-height:1.5;}
+
+/* ====== Input Area ====== */
+.input-area{flex-shrink:0;padding:8px 12px;padding-bottom:calc(8px + var(--safe-bottom));background:var(--surface);border-top:1px solid var(--border);}
+.input-row{display:flex;gap:8px;align-items:flex-end;}
+.input-row textarea{flex:1;border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;font-size:14px;font-family:var(--font);line-height:1.5;resize:none;min-height:42px;max-height:120px;outline:none;transition:border-color .2s;background:var(--bg);color:var(--ink);}
+.input-row textarea:focus{border-color:var(--brand-light);}
+.input-row .send-btn{width:42px;height:42px;border-radius:50%;border:none;background:var(--brand);color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;}
+.input-row .send-btn:active{transform:scale(.9);background:var(--brand-dark);}
+.input-row .send-btn:disabled{opacity:.4;cursor:not-allowed;}
+
+/* ====== Detail Modal ====== */
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);z-index:100;display:none;animation:fadeIn .2s;}
+.modal-overlay.show{display:block;}
+.modal-sheet{position:fixed;bottom:0;left:50%;transform:translateX(-50%) translateY(100%);width:100%;max-width:480px;max-height:85vh;background:var(--surface);border-radius:var(--radius-lg) var(--radius-lg) 0 0;z-index:101;overflow-y:auto;transition:transform .3s cubic-bezier(.32,.72,0,1);padding:16px 20px;padding-bottom:calc(16px + var(--safe-bottom));}
+.modal-sheet.show{transform:translateX(-50%) translateY(0);}
+.modal-sheet .handle{width:36px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 12px;}
+.modal-sheet .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.modal-sheet .modal-header h2{font-size:16px;font-weight:700;}
+.modal-sheet .close-btn{width:32px;height:32px;border:none;border-radius:50%;background:var(--bg);color:var(--muted);font-size:16px;cursor:pointer;}
+.modal-section{margin-bottom:12px;}
+.modal-section .label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
+.modal-section .value{font-size:14px;line-height:1.6;}
+.modal-section .score-row{display:flex;gap:8px;flex-wrap:wrap;}
+.modal-section .score-item{display:flex;flex-direction:column;align-items:center;background:var(--bg);border-radius:var(--radius);padding:8px 12px;min-width:56px;}
+.modal-section .score-item .num{font-size:18px;font-weight:700;color:var(--brand);}
+.modal-section .score-item .lbl{font-size:10px;color:var(--muted);}
+.modal-section .search-result{background:var(--bg);border-radius:var(--radius);padding:10px 12px;margin-bottom:6px;}
+.modal-section .search-result .s-title{font-size:13px;font-weight:600;margin-bottom:2px;}
+.modal-section .search-result .s-title a{color:var(--brand);text-decoration:none;}
+.modal-section .search-result .s-snippet{font-size:12px;color:var(--muted);line-height:1.5;}
+.modal-actions{display:flex;gap:8px;margin-top:4px;}
+.modal-actions button{flex:1;padding:10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;color:var(--ink);}
+.modal-actions button:active{transform:scale(.97);background:var(--bg);}
+.modal-actions button.primary{background:var(--brand);color:#fff;border-color:var(--brand);}
+
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+/* ====== Toast ====== */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 20px;border-radius:var(--radius);font-size:13px;font-weight:500;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;max-width:400px;text-align:center;}
+.toast.show{opacity:1;}
+
+/* ====== Stats Badge ====== */
+.stats-chip{display:flex;gap:4px;flex-wrap:wrap;padding:8px 0;}
+.stats-chip .chip{font-size:11px;padding:4px 10px;border-radius:999px;background:var(--bg);border:1px solid var(--border);color:var(--muted);}
+.stats-chip .chip strong{color:var(--ink);}
+
+/* ====== Loading ====== */
+.loading-dots{display:flex;gap:4px;align-items:center;justify-content:center;padding:20px;}
+.loading-dots span{width:6px;height:6px;border-radius:50%;background:var(--brand-light);animation:bounce 1.4s infinite;}
+.loading-dots span:nth-child(2){animation-delay:.2s;}
+.loading-dots span:nth-child(3){animation-delay:.4s;}
+@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-8px)}}
+
+/* ====== Search tab ====== */
+.search-box{display:flex;gap:8px;margin-bottom:10px;}
+.search-box input{flex:1;border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;font-size:14px;font-family:var(--font);outline:none;background:var(--surface);}
+.search-box input:focus{border-color:var(--brand-light);}
+.search-box button{padding:10px 16px;border:none;border-radius:var(--radius);background:var(--brand);color:#fff;font-size:13px;font-weight:500;cursor:pointer;}
+
+/* ====== Responsive ====== */
+@media (min-width:480px){
+  .app{box-shadow:0 0 20px rgba(0,0,0,.06);border-left:1px solid var(--border);border-right:1px solid var(--border);}
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <!-- Header -->
+  <header class="app-header">
+    <h1><span class="dot"></span> 灵感管家</h1>
+    <div class="header-actions">
+      <button class="header-btn" onclick="refreshCurrent()" title="刷新">↻</button>
+    </div>
+  </header>
+
+  <!-- Tab Bar -->
+  <nav class="tab-bar" id="tabBar">
+    <button class="tab-btn active" data-tab="all" onclick="switchTab('all')">全部</button>
+    <button class="tab-btn" data-tab="work" onclick="switchTab('work')">🔧 工作</button>
+    <button class="tab-btn" data-tab="life" onclick="switchTab('life')">🌱 生活</button>
+    <button class="tab-btn" data-tab="todo" onclick="switchTab('todo')">✅ 待办</button>
+    <button class="tab-btn" data-tab="search" onclick="switchTab('search')">🔍 搜索</button>
+  </nav>
+
+  <!-- Content -->
+  <div class="content-area" id="contentArea">
+    <div class="stats-chip" id="statsChip"></div>
+    <div id="ideaList"></div>
+  </div>
+
+  <!-- Input -->
+  <div class="input-area">
+    <div class="input-row">
+      <textarea id="ideaInput" rows="1" placeholder="输入你的灵感…" oninput="autoResize(this)"></textarea>
+      <button class="send-btn" id="sendBtn" onclick="submitIdea()">↑</button>
+    </div>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal()"></div>
+<div class="modal-sheet" id="modalSheet">
+  <div class="handle"></div>
+  <div class="modal-header">
+    <h2 id="modalTitle">灵感详情</h2>
+    <button class="close-btn" onclick="closeModal()">✕</button>
+  </div>
+  <div id="modalBody"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ====== State ======
+let allIdeas = [];
+let currentTab = 'all';
+let isLoading = false;
+
+// ====== Auto Resize Textarea ======
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+// ====== Enter to Send ======
+document.getElementById('ideaInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    submitIdea();
+  }
+});
+
+// ====== Toast ======
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ====== Loading ======
+function showLoading() {
+  document.getElementById('ideaList').innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
+}
+
+// ====== Tab Switching ======
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  renderIdeas();
+  if (tab === 'search') renderSearch();
+}
+
+// ====== Fetch Ideas ======
+async function fetchIdeas() {
+  try {
+    const params = new URLSearchParams();
+    if (currentTab === 'work') params.set('domain', 'work');
+    else if (currentTab === 'life') params.set('domain', 'life');
+    else if (currentTab === 'todo') params.set('decision__in', 'todo-work,todo-life');
+    const resp = await fetch('/api/ideas?' + params.toString());
+    const data = await resp.json();
+    allIdeas = data.ideas || [];
+    renderStats(data.stats);
+    renderIdeas();
+  } catch(e) {
+    showToast('加载失败，请检查网络');
+  }
+}
+
+// ====== Render Stats ======
+function renderStats(stats) {
+  if (!stats) return;
+  const chip = document.getElementById('statsChip');
+  chip.innerHTML = `
+    <span class="chip">📋 共 <strong>${stats.total||0}</strong> 条</span>
+    <span class="chip">🔧 <strong>${stats.work||0}</strong></span>
+    <span class="chip">🌱 <strong>${stats.life||0}</strong></span>
+    <span class="chip">✅ 待办 <strong>${(stats.todo_work||0)+(stats.todo_life||0)}</strong></span>
+  `;
+}
+
+// ====== Render Ideas ======
+function renderIdeas() {
+  const container = document.getElementById('ideaList');
+  if (currentTab === 'search') return;
+  let ideas = allIdeas;
+  if (currentTab === 'todo') {
+    ideas = allIdeas.filter(i => i.decision && i.decision.startsWith('todo'));
+  }
+
+  if (!ideas.length) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="icon">💡</div>
+        <h3>还没有灵感</h3>
+        <p>在下方输入你的想法，<br>Agent 会自动归类分析</p>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = ideas.map(idea => `
+    <div class="idea-card" onclick="openIdea(${idea.id})">
+      <div class="card-top">
+        <span class="card-id">#${idea.id}</span>
+        <span class="card-time">${idea.created_at || ''}</span>
+      </div>
+      <div class="card-content">${escapeHtml(idea.content)}</div>
+      <div class="card-bottom">
+        ${(idea.tags||'').split(',').filter(Boolean).map(t => {
+          const cls = getTagClass(t);
+          return `<span class="tag ${cls}">${t}</span>`;
+        }).join('')}
+        ${idea.decision ? `<span class="decision-badge ${idea.decision}">${getDecisionLabel(idea.decision)}</span>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+// ====== Render Search ======
+function renderSearch() {
+  const container = document.getElementById('ideaList');
+  container.innerHTML = `
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="输入搜索关键词…" onkeydown="if(event.key==='Enter')doSearch()">
+      <button onclick="doSearch()">搜索</button>
+    </div>
+    <div class="search-box" style="gap:4px;flex-wrap:wrap;">
+      <button style="font-size:12px;padding:6px 12px;background:var(--bg);color:var(--ink);border:1px solid var(--border);border-radius:999px;cursor:pointer;" onclick="quickSearch('氢内燃机 台架试验 标准')">氢内燃机标准</button>
+      <button style="font-size:12px;padding:6px 12px;background:var(--bg);color:var(--ink);border:1px solid var(--border);border-radius:999px;cursor:pointer;" onclick="quickSearch('水平对置发动机 技术')">水平对置技术</button>
+      <button style="font-size:12px;padding:6px 12px;background:var(--bg);color:var(--ink);border:1px solid var(--border);border-radius:999px;cursor:pointer;" onclick="quickSearch('航空发动机 适航认证')">适航认证</button>
+    </div>
+    <div id="searchResults"></div>
+  `;
+}
+
+// ====== Search ======
+async function doSearch() {
+  const query = document.getElementById('searchInput')?.value?.trim();
+  if (!query) return;
+  const container = document.getElementById('searchResults');
+  container.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
+  try {
+    const resp = await fetch('/api/search', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({query})
+    });
+    const data = await resp.json();
+    if (!data.results || !data.results.length) {
+      container.innerHTML = '<div class="empty-state"><p>未找到相关结果</p></div>';
+      return;
+    }
+    container.innerHTML = data.results.map(r => `
+      <div class="modal-section">
+        <div class="search-result">
+          <div class="s-title"><a href="${r.url||'#'}" target="_blank">${escapeHtml(r.title||'无标题')}</a></div>
+          <div class="s-snippet">${escapeHtml(r.snippet||'')}</div>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {
+    container.innerHTML = '<div class="empty-state"><p>搜索失败，请稍后重试</p></div>';
+  }
+}
+
+function quickSearch(q) {
+  const input = document.getElementById('searchInput');
+  if (input) { input.value = q; doSearch(); }
+}
+
+// ====== Submit Idea ======
+async function submitIdea() {
+  const input = document.getElementById('ideaInput');
+  const content = input.value.trim();
+  if (!content) return;
+  const btn = document.getElementById('sendBtn');
+  btn.disabled = true;
+  input.value = '';
+  input.style.height = 'auto';
+  showLoading();
+  try {
+    const resp = await fetch('/api/ideas', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({content})
+    });
+    const idea = await resp.json();
+    showToast(`已记录灵感 #${idea.id}（${getDecisionLabel(idea.decision||'')}）`);
+    switchTab('all');
+    await fetchIdeas();
+  } catch(e) {
+    showToast('记录失败，请重试');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ====== Open Idea Detail ======
+async function openIdea(id) {
+  try {
+    const resp = await fetch(`/api/ideas/${id}`);
+    const idea = await resp.json();
+    showModal(idea);
+  } catch(e) {
+    showToast('加载失败');
+  }
+}
+
+function showModal(idea) {
+  const overlay = document.getElementById('modalOverlay');
+  const sheet = document.getElementById('modalSheet');
+  const body = document.getElementById('modalBody');
+  document.getElementById('modalTitle').textContent = `灵感 #${idea.id}`;
+
+  let searchHtml = '';
+  let results = [];
+  try { results = JSON.parse(idea.search_results || '[]'); } catch(e) {}
+  if (results.length) {
+    searchHtml = results.map(r => `
+      <div class="search-result">
+        <div class="s-title"><a href="${r.url||'#'}" target="_blank">${escapeHtml(r.title||'无标题')}</a></div>
+        <div class="s-snippet">${escapeHtml(r.snippet||'')}</div>
+      </div>
+    `).join('');
+  }
+
+  const tags = (idea.tags||'').split(',').filter(Boolean);
+  body.innerHTML = `
+    <div class="modal-section">
+      <div class="label">内容</div>
+      <div class="value">${escapeHtml(idea.content)}</div>
+    </div>
+    <div class="modal-section">
+      <div class="label">时间</div>
+      <div class="value">${idea.created_at||''}</div>
+    </div>
+    ${tags.length ? `<div class="modal-section">
+      <div class="label">分类标签</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        ${tags.map(t => `<span class="tag ${getTagClass(t)}">${t}</span>`).join('')}
+      </div>
+    </div>` : ''}
+    ${idea.decision ? `<div class="modal-section">
+      <div class="label">决策结果</div>
+      <div><span class="decision-badge ${idea.decision}">${getDecisionLabel(idea.decision)}</span></div>
+    </div>` : ''}
+    ${idea.feasibility ? `<div class="modal-section">
+      <div class="label">工作类评分</div>
+      <div class="score-row">
+        <div class="score-item"><span class="num">${idea.feasibility||'-'}</span><span class="lbl">可行性</span></div>
+        <div class="score-item"><span class="num">${idea.priority||'-'}</span><span class="lbl">优先级</span></div>
+        <div class="score-item"><span class="num">${idea.urgency||'-'}</span><span class="lbl">紧迫性</span></div>
+        <div class="score-item"><span class="num">${idea.risk||'-'}</span><span class="lbl">风险性</span></div>
+      </div>
+    </div>` : ''}
+    ${idea.suggestion ? `<div class="modal-section">
+      <div class="label">建议</div>
+      <div class="value">${idea.suggestion}</div>
+    </div>` : ''}
+    ${searchHtml ? `<div class="modal-section">
+      <div class="label">搜索结果</div>
+      ${searchHtml}
+    </div>` : ''}
+    <div class="modal-actions">
+      <button onclick="searchIdea(${idea.id})">🔍 搜索背景</button>
+      <button onclick="reanalyzeIdea(${idea.id})">📊 重新分析</button>
+      <button onclick="deleteIdea(${idea.id})" style="color:#ef4444;">🗑️ 删除</button>
+    </div>
+  `;
+  overlay.classList.add('show');
+  sheet.classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('show');
+  document.getElementById('modalSheet').classList.remove('show');
+}
+
+async function searchIdea(id) {
+  try {
+    const resp = await fetch(`/api/ideas/${id}/search`, {method:'POST'});
+    const data = await resp.json();
+    showToast('搜索完成');
+    openIdea(id);
+  } catch(e) {
+    showToast('搜索失败');
+  }
+}
+
+async function reanalyzeIdea(id) {
+  try {
+    await fetch(`/api/ideas/${id}/analyze`, {method:'POST'});
+    showToast('分析完成');
+    openIdea(id);
+    fetchIdeas();
+  } catch(e) {
+    showToast('分析失败');
+  }
+}
+
+async function deleteIdea(id) {
+  if (!confirm('确认删除这条灵感？')) return;
+  try {
+    await fetch(`/api/ideas/${id}`, {method:'DELETE'});
+    closeModal();
+    showToast('已删除');
+    fetchIdeas();
+  } catch(e) {
+    showToast('删除失败');
+  }
+}
+
+function refreshCurrent() {
+  fetchIdeas();
+  showToast('已刷新');
+}
+
+// ====== Helpers ======
+function escapeHtml(s) {
+  if (!s) return '';
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function getTagClass(tag) {
+  const workTags = ['engine-arch','combustion','hydrogen-safety','test-bench','nvh','materials','schedule','resource','risk','quality','supply-chain'];
+  const lifeTags = ['daily-thought','personal-todo','health','family','learning','social','travel','finance'];
+  const procTags = ['procedure','regulation','doc'];
+  if (workTags.includes(tag)) return 'work';
+  if (lifeTags.includes(tag)) return 'life';
+  if (procTags.includes(tag)) return 'process';
+  return 'other';
+}
+
+function getDecisionLabel(d) {
+  const m = {
+    'todo-work': '✅ 工作待办',
+    'todo-life': '✅ 生活待办',
+    'stash': '📌 暂存',
+    'archive': '🗂️ 归档'
+  };
+  return m[d] || d;
+}
+
+// ====== Init ======
+document.addEventListener('DOMContentLoaded', () => {
+  fetchIdeas();
+  // Register service worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  }
+});
+</script>
+</body>
+</html>
