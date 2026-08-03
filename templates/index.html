@@ -335,7 +335,7 @@ function renderIdeas() {
       <div class="card-bottom">
         ${(idea.tags||'').split(',').filter(Boolean).map(t => {
           const cls = getTagClass(t);
-          return `<span class="tag ${cls}">${t}</span>`;
+          return `<span class="tag ${cls}">${getTagLabel(t)}</span>`;
         }).join('')}
         ${idea.decision ? `<span class="decision-badge ${idea.decision}">${getDecisionLabel(idea.decision)}</span>` : ''}
       </div>
@@ -486,7 +486,7 @@ function showModal(idea) {
     ${tags.length ? `<div class="modal-section">
       <div class="label">分类标签</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;">
-        ${tags.map(t => `<span class="tag ${getTagClass(t)}">${t}</span>`).join('')}
+        ${tags.map(t => `<span class="tag ${getTagClass(t)}">${getTagLabel(t)}</span>`).join('')}
       </div>
     </div>` : ''}
     ${idea.decision ? `<div class="modal-section">
@@ -801,6 +801,38 @@ function escapeHtml(s) {
   const d = document.createElement('div');
   d.textContent = s;
   return d.innerHTML;
+}
+
+const TAG_LABELS = {
+  'engine-arch': '发动机架构/结构设计',
+  'combustion': '燃烧/喷射/点火',
+  'hydrogen-safety': '氢气安全/泄漏/防爆',
+  'test-bench': '台架试验/测试方法',
+  'nvh': 'NVH/振动/噪声',
+  'materials': '材料/密封/耐久',
+  'schedule': '进度/排期/里程碑',
+  'resource': '人力/设备/预算',
+  'risk': '风险识别/应对',
+  'quality': '质量/标准/适航',
+  'supply-chain': '供应链/采购',
+  'daily-thought': '日常感悟/随想/反思',
+  'personal-todo': '生活待办/购物/缴费',
+  'health': '健康/运动/体检',
+  'family': '家庭/家人相关',
+  'learning': '学习/阅读/技能',
+  'social': '社交/人脉/活动',
+  'travel': '出行/行程安排',
+  'finance': '个人财务/理财',
+  'procedure': '流程优化/改进',
+  'regulation': '法规/标准/认证',
+  'doc': '文档/报告/纪要',
+  'idea': '初步想法，待评估',
+  'question': '待确认/待研究的问题',
+  'reference': '参考信息/资料',
+};
+
+function getTagLabel(tag) {
+  return TAG_LABELS[tag] || tag;
 }
 
 function getTagClass(tag) {
