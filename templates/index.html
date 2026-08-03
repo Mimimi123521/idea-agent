@@ -453,6 +453,27 @@ function showModal(idea) {
 
   const isTodo = idea.decision && idea.decision.startsWith('todo');
   const tags = (idea.tags||'').split(',').filter(Boolean);
+  const todoSection = isTodo ? `
+    <div class="modal-section" style="background:#fefce8;border-radius:var(--radius);padding:10px 12px;">
+      <div class="label" style="color:#92400e;">⏰ 待办提醒</div>
+      <div class="reminder-row">
+        <input type="datetime-local" id="remindTime" value="${getDefaultRemindTime()}">
+        <button class="remind-btn" id="remindBtn" onclick="setReminder(${idea.id})">设置提醒</button>
+      </div>
+    </div>` : `
+    <div class="modal-section" style="background:#f0fdf4;border-radius:var(--radius);padding:10px 12px;">
+      <div class="label" style="color:#166534;">📋 加入待办</div>
+      <div style="margin-top:8px;">
+        <div class="reminder-row" style="margin-bottom:8px;">
+          <input type="datetime-local" id="remindTime" value="${getDefaultRemindTime()}">
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="todo-btn" onclick="markAsTodo(${idea.id}, 'todo-work')" style="flex:1;padding:8px 12px;border:none;border-radius:var(--radius);background:var(--brand);color:#fff;font-size:13px;font-weight:500;cursor:pointer;">🔧 工作待办 + 提醒</button>
+          <button class="todo-btn" onclick="markAsTodo(${idea.id}, 'todo-life')" style="flex:1;padding:8px 12px;border:none;border-radius:var(--radius);background:#f59e0b;color:#fff;font-size:13px;font-weight:500;cursor:pointer;">🌱 生活待办 + 提醒</button>
+        </div>
+      </div>
+    </div>`;
+
   body.innerHTML = `
     <div class="modal-section">
       <div class="label">内容</div>
@@ -489,14 +510,7 @@ function showModal(idea) {
       <div class="label">搜索结果</div>
       ${searchHtml}
     </div>` : ''}
-    ${isTodo ? `
-    <div class="modal-section" style="background:#fefce8;border-radius:var(--radius);padding:10px 12px;margin-top:8px;">
-      <div class="label" style="color:#92400e;">⏰ 设置提醒</div>
-      <div class="reminder-row">
-        <input type="datetime-local" id="remindTime" value="${getDefaultRemindTime()}">
-        <button class="remind-btn" id="remindBtn" onclick="setReminder(${idea.id})">设置提醒</button>
-      </div>
-    </div>` : ''}
+    ${todoSection}
     <div class="modal-actions">
       <button onclick="searchIdea(${idea.id})">🔍 搜索背景</button>
       <button onclick="reanalyzeIdea(${idea.id})">📊 重新分析</button>
@@ -541,6 +555,41 @@ async function setReminder(ideaId) {
   } finally {
     btn.disabled = false;
     btn.textContent = '设置提醒';
+  }
+}
+
+async function markAsTodo(ideaId, decision) {
+  const input = document.getElementById('remindTime');
+  if (!input.value) { showToast('请选择提醒时间'); return; }
+  const btns = document.querySelectorAll('.todo-btn');
+  btns.forEach(b => b.disabled = true);
+  try {
+    // 1. Update idea decision to todo
+    const resp1 = await fetch(`/api/ideas/${ideaId}`, {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({decision: decision, suggestion: '用户手动标记为待办'})
+    });
+    const idea = await resp1.json();
+    if (!idea.id) { showToast('设置失败'); return; }
+    // 2. Set reminder
+    const resp2 = await fetch(`/api/ideas/${ideaId}/reminder`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({remind_at: input.value.replace('T', ' ')})
+    });
+    const data = await resp2.json();
+    if (data.ok) {
+      showToast('✅ 已加入待办并设置提醒');
+      updateBellBadge();
+      fetchIdeas();
+      // Reopen modal to show updated state
+      openIdea(ideaId);
+    }
+  } catch(e) {
+    showToast('操作失败，请重试');
+  } finally {
+    btns.forEach(b => b.disabled = false);
   }
 }
 
