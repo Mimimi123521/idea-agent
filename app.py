@@ -2,6 +2,7 @@ import os
 import json
 from flask import Flask, request, jsonify, render_template, send_from_directory
 from database import init_db, add_idea, update_idea, get_idea, list_ideas, delete_idea, get_stats
+from database import add_reminder, get_pending_reminders, get_upcoming_reminders, dismiss_reminder, dismiss_reminders_by_idea, get_reminder_count
 from agent_engine import process_idea
 from search_engine import search_web, batch_search
 
@@ -105,6 +106,49 @@ def api_batch_search():
 @app.route('/api/stats', methods=['GET'])
 def api_stats():
     return jsonify(get_stats())
+
+# ============ Reminder Routes ============
+
+@app.route('/api/ideas/<int:idea_id>/reminder', methods=['POST'])
+def api_set_reminder(idea_id):
+    """为灵感设置提醒"""
+    idea = get_idea(idea_id)
+    if not idea:
+        return jsonify({'error': 'not found'}), 404
+    data = request.get_json()
+    remind_at = data.get('remind_at', '').strip()
+    if not remind_at:
+        return jsonify({'error': '提醒时间不能为空'}), 400
+    title = data.get('title', '') or idea['content'][:30]
+    message = data.get('message', '') or idea['content']
+    reminder_id = add_reminder(idea_id, remind_at, title, message)
+    return jsonify({'id': reminder_id, 'ok': True}), 201
+
+@app.route('/api/reminders/pending', methods=['GET'])
+def api_pending_reminders():
+    """获取当前已到期的待提醒"""
+    reminders = get_pending_reminders()
+    return jsonify({'reminders': reminders, 'count': len(reminders)})
+
+@app.route('/api/reminders/upcoming', methods=['GET'])
+def api_upcoming_reminders():
+    """获取所有待提醒"""
+    reminders = get_upcoming_reminders()
+    return jsonify({'reminders': reminders})
+
+@app.route('/api/reminders/count', methods=['GET'])
+def api_reminder_count():
+    return jsonify({'count': get_reminder_count()})
+
+@app.route('/api/reminders/<int:reminder_id>/dismiss', methods=['POST'])
+def api_dismiss_reminder(reminder_id):
+    dismiss_reminder(reminder_id)
+    return jsonify({'ok': True})
+
+@app.route('/api/ideas/<int:idea_id>/reminders/dismiss', methods=['POST'])
+def api_dismiss_idea_reminders(idea_id):
+    dismiss_reminders_by_idea(idea_id)
+    return jsonify({'ok': True})
 
 # ============ PWA Support ============
 

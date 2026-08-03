@@ -31,6 +31,17 @@ def init_db():
             search_results TEXT DEFAULT '[]',
             status TEXT DEFAULT 'active'
         );
+
+        CREATE TABLE IF NOT EXISTS reminders (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            idea_id INTEGER NOT NULL,
+            remind_at TEXT NOT NULL,
+            title TEXT DEFAULT '',
+            message TEXT DEFAULT '',
+            status TEXT DEFAULT 'pending',
+            created_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+            FOREIGN KEY (idea_id) REFERENCES ideas(id)
+        );
     """)
     conn.commit()
     conn.close()
@@ -120,3 +131,60 @@ def get_stats():
         elif dec == 'archive':
             stats['archive'] += cnt
     return stats
+
+# ============ Reminders ============
+
+def add_reminder(idea_id, remind_at, title='', message=''):
+    conn = get_db()
+    cur = conn.execute(
+        "INSERT INTO reminders (idea_id, remind_at, title, message) VALUES (?, ?, ?, ?)",
+        (idea_id, remind_at, title, message)
+    )
+    reminder_id = cur.lastrowid
+    conn.commit()
+    conn.close()
+    return reminder_id
+
+def get_pending_reminders():
+    """获取当前时间已到期的待提醒"""
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT r.*, i.content as idea_content, i.decision FROM reminders r "
+        "LEFT JOIN ideas i ON r.idea_id = i.id "
+        "WHERE r.status='pending' AND r.remind_at <= datetime('now','localtime') "
+        "ORDER BY r.remind_at ASC"
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def get_upcoming_reminders():
+    """获取所有待提醒（含未到期）"""
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT r.*, i.content as idea_content, i.decision FROM reminders r "
+        "LEFT JOIN ideas i ON r.idea_id = i.id "
+        "WHERE r.status='pending' "
+        "ORDER BY r.remind_at ASC"
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def dismiss_reminder(reminder_id):
+    conn = get_db()
+    conn.execute("UPDATE reminders SET status='dismissed' WHERE id=?", (reminder_id,))
+    conn.commit()
+    conn.close()
+
+def dismiss_reminders_by_idea(idea_id):
+    conn = get_db()
+    conn.execute("UPDATE reminders SET status='dismissed' WHERE idea_id=? AND status='pending'", (idea_id,))
+    conn.commit()
+    conn.close()
+
+def get_reminder_count():
+    conn = get_db()
+    row = conn.execute(
+        "SELECT COUNT(*) as cnt FROM reminders WHERE status='pending' AND remind_at <= datetime('now','localtime')"
+    ).fetchone()
+    conn.close()
+    return row['cnt'] if row else 0

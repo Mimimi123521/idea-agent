@@ -111,6 +111,32 @@ body{font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-
 
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 
+/* ====== Bell Badge ====== */
+.bell-badge{position:absolute;top:-2px;right:-4px;min-width:18px;height:18px;border-radius:9px;background:#ef4444;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid var(--surface);animation:bellPop .3s;}
+@keyframes bellPop{0%{transform:scale(0)}50%{transform:scale(1.2)}100%{transform:scale(1)}}
+
+/* ====== Notification Panel ====== */
+.notif-panel{position:fixed;bottom:0;left:50%;transform:translateX(-50%) translateY(100%);width:100%;max-width:480px;max-height:70vh;background:var(--surface);border-radius:var(--radius-lg) var(--radius-lg) 0 0;z-index:101;overflow-y:auto;transition:transform .3s cubic-bezier(.32,.72,0,1);padding:16px 20px;padding-bottom:calc(16px + var(--safe-bottom));}
+.notif-panel.show{transform:translateX(-50%) translateY(0);}
+.notif-panel .handle{width:36px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 12px;}
+.notif-item{display:flex;align-items:flex-start;gap:10px;padding:12px 0;border-bottom:1px solid var(--border);}
+.notif-item:last-child{border-bottom:none;}
+.notif-item .n-icon{width:32px;height:32px;border-radius:50%;background:#fef3c7;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.notif-item .n-body{flex:1;min-width:0;}
+.notif-item .n-title{font-size:13px;font-weight:600;margin-bottom:2px;}
+.notif-item .n-time{font-size:11px;color:var(--muted);margin-bottom:4px;}
+.notif-item .n-msg{font-size:12px;color:var(--ink);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.notif-item .n-action{flex-shrink:0;}
+.notif-item .n-action button{width:28px;height:28px;border:none;border-radius:50%;background:var(--bg);color:var(--muted);font-size:14px;cursor:pointer;}
+
+/* ====== Reminder Picker ====== */
+.reminder-row{display:flex;gap:8px;align-items:center;margin-top:8px;}
+.reminder-row input[type="datetime-local"]{flex:1;border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;font-size:13px;font-family:var(--font);outline:none;background:var(--bg);color:var(--ink);}
+.reminder-row input[type="datetime-local"]:focus{border-color:var(--brand-light);}
+.reminder-row .remind-btn{padding:8px 14px;border:none;border-radius:var(--radius);background:var(--brand);color:#fff;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;}
+.reminder-row .remind-btn:active{transform:scale(.95);}
+.reminder-row .remind-btn:disabled{opacity:.4;cursor:not-allowed;}
+
 /* ====== Toast ====== */
 .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 20px;border-radius:var(--radius);font-size:13px;font-weight:500;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;max-width:400px;text-align:center;}
 .toast.show{opacity:1;}
@@ -145,6 +171,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-
   <header class="app-header">
     <h1><span class="dot"></span> 灵感管家</h1>
     <div class="header-actions">
+      <button class="header-btn" id="bellBtn" onclick="toggleNotificationPanel()" title="通知" style="position:relative;">
+        🔔
+        <span class="bell-badge" id="bellBadge" style="display:none;">0</span>
+      </button>
       <button class="header-btn" onclick="refreshCurrent()" title="刷新">↻</button>
     </div>
   </header>
@@ -184,6 +214,23 @@ body{font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-
   <div id="modalBody"></div>
 </div>
 
+<!-- Notification Panel -->
+<div class="modal-overlay" id="notifOverlay" onclick="closeNotificationPanel()"></div>
+<div class="notif-panel" id="notifPanel">
+  <div class="handle"></div>
+  <div class="modal-header">
+    <h2>🔔 通知提醒</h2>
+    <button class="close-btn" onclick="closeNotificationPanel()">✕</button>
+  </div>
+  <div id="notifBody">
+    <div class="empty-state" style="padding:30px 20px;">
+      <div class="icon">🔔</div>
+      <h3>暂无通知</h3>
+      <p>待办事项的提醒会在这里显示</p>
+    </div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
@@ -192,6 +239,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-
 let allIdeas = [];
 let currentTab = 'all';
 let isLoading = false;
+let notifInterval = null;
+let lastNotifCount = 0;
 
 // ====== Auto Resize Textarea ======
 function autoResize(el) {
@@ -402,6 +451,7 @@ function showModal(idea) {
     `).join('');
   }
 
+  const isTodo = idea.decision && idea.decision.startsWith('todo');
   const tags = (idea.tags||'').split(',').filter(Boolean);
   body.innerHTML = `
     <div class="modal-section">
@@ -439,6 +489,14 @@ function showModal(idea) {
       <div class="label">搜索结果</div>
       ${searchHtml}
     </div>` : ''}
+    ${isTodo ? `
+    <div class="modal-section" style="background:#fefce8;border-radius:var(--radius);padding:10px 12px;margin-top:8px;">
+      <div class="label" style="color:#92400e;">⏰ 设置提醒</div>
+      <div class="reminder-row">
+        <input type="datetime-local" id="remindTime" value="${getDefaultRemindTime()}">
+        <button class="remind-btn" id="remindBtn" onclick="setReminder(${idea.id})">设置提醒</button>
+      </div>
+    </div>` : ''}
     <div class="modal-actions">
       <button onclick="searchIdea(${idea.id})">🔍 搜索背景</button>
       <button onclick="reanalyzeIdea(${idea.id})">📊 重新分析</button>
@@ -452,6 +510,38 @@ function showModal(idea) {
 function closeModal() {
   document.getElementById('modalOverlay').classList.remove('show');
   document.getElementById('modalSheet').classList.remove('show');
+}
+
+function getDefaultRemindTime() {
+  const now = new Date();
+  now.setMinutes(now.getMinutes() + 30);
+  const pad = n => String(n).padStart(2,'0');
+  return `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+}
+
+async function setReminder(ideaId) {
+  const input = document.getElementById('remindTime');
+  const btn = document.getElementById('remindBtn');
+  if (!input.value) { showToast('请选择提醒时间'); return; }
+  btn.disabled = true;
+  btn.textContent = '设置中…';
+  try {
+    const resp = await fetch(`/api/ideas/${ideaId}/reminder`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({remind_at: input.value.replace('T', ' ')})
+    });
+    const data = await resp.json();
+    if (data.ok) {
+      showToast('✅ 提醒已设置');
+      updateBellBadge();
+    }
+  } catch(e) {
+    showToast('设置失败，请重试');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '设置提醒';
+  }
 }
 
 async function searchIdea(id) {
@@ -493,6 +583,169 @@ function refreshCurrent() {
   showToast('已刷新');
 }
 
+// ====== Notification System ======
+
+async function updateBellBadge() {
+  try {
+    const resp = await fetch('/api/reminders/count');
+    const data = await resp.json();
+    const badge = document.getElementById('bellBadge');
+    const count = data.count || 0;
+    if (count > 0) {
+      badge.textContent = count > 99 ? '99+' : count;
+      badge.style.display = 'flex';
+      // If count increased, show browser notification
+      if (count > lastNotifCount) {
+        showBrowserNotification(count);
+      }
+      lastNotifCount = count;
+    } else {
+      badge.style.display = 'none';
+      lastNotifCount = 0;
+    }
+  } catch(e) {}
+}
+
+function showBrowserNotification(count) {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'granted') {
+    new Notification('灵感管家', {
+      body: `你有 ${count} 条待办提醒待处理`,
+      icon: '/static/icons/icon-192.png',
+      tag: 'idea-reminder'
+    });
+    // Also send through Service Worker for background notification
+    sendViaServiceWorker('灵感管家', `你有 ${count} 条待办提醒待处理`);
+  }
+}
+
+function sendViaServiceWorker(title, body, url) {
+  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    navigator.serviceWorker.controller.postMessage({
+      type: 'show-notification',
+      title: title,
+      body: body,
+      tag: 'idea-reminder-' + Date.now(),
+      url: url || '/'
+    });
+  }
+}
+
+async function pollNotifications() {
+  try {
+    const resp = await fetch('/api/reminders/pending');
+    const data = await resp.json();
+    if (data.reminders && data.reminders.length > 0) {
+      // Show browser notifications
+      data.reminders.forEach(r => {
+        const title = '⏰ ' + (r.title || r.idea_content || '').slice(0, 30);
+        const body = (r.message || r.idea_content || '').slice(0, 100);
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification(title, {
+            body: body,
+            icon: '/static/icons/icon-192.png',
+            tag: 'reminder-' + r.id,
+            requireInteraction: true,
+            vibrate: [200, 100, 200]
+          });
+        }
+        // Send via Service Worker for background notification
+        sendViaServiceWorker(title, body, '/');
+      });
+      // Auto-dismiss
+      for (const r of data.reminders) {
+        await fetch(`/api/reminders/${r.id}/dismiss`, {method: 'POST'});
+      }
+      updateBellBadge();
+      // If panel is open, refresh it
+      if (document.getElementById('notifPanel').classList.contains('show')) {
+        loadNotificationList();
+      }
+    }
+  } catch(e) {}
+}
+
+function toggleNotificationPanel() {
+  const panel = document.getElementById('notifPanel');
+  const overlay = document.getElementById('notifOverlay');
+  if (panel.classList.contains('show')) {
+    panel.classList.remove('show');
+    overlay.classList.remove('show');
+  } else {
+    overlay.classList.add('show');
+    panel.classList.add('show');
+    loadNotificationList();
+  }
+}
+
+function closeNotificationPanel() {
+  document.getElementById('notifPanel').classList.remove('show');
+  document.getElementById('notifOverlay').classList.remove('show');
+}
+
+async function loadNotificationList() {
+  const body = document.getElementById('notifBody');
+  try {
+    const resp = await fetch('/api/reminders/upcoming');
+    const data = await resp.json();
+    const reminders = data.reminders || [];
+    if (!reminders.length) {
+      body.innerHTML = `
+        <div class="empty-state" style="padding:30px 20px;">
+          <div class="icon">🔔</div>
+          <h3>暂无通知</h3>
+          <p>待办事项的提醒会在这里显示</p>
+        </div>`;
+      return;
+    }
+    const now = new Date();
+    body.innerHTML = reminders.map(r => {
+      const remindTime = new Date(r.remind_at.replace(' ', 'T'));
+      const isOverdue = remindTime <= now;
+      const timeStr = formatTime(r.remind_at);
+      const content = r.idea_content || '';
+      return `
+        <div class="notif-item">
+          <div class="n-icon" style="${isOverdue ? 'background:#fee2e2;' : ''}">${isOverdue ? '⏰' : '📅'}</div>
+          <div class="n-body">
+            <div class="n-title">${isOverdue ? '⏰ 已到期' : '📅 待提醒'}</div>
+            <div class="n-time">${timeStr}</div>
+            <div class="n-msg">${escapeHtml(content.slice(0, 80))}</div>
+          </div>
+          <div class="n-action">
+            <button onclick="dismissNotif(${r.id})" title="忽略">✕</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch(e) {
+    body.innerHTML = '<div class="empty-state" style="padding:30px 20px;"><p>加载失败</p></div>';
+  }
+}
+
+async function dismissNotif(id) {
+  try {
+    await fetch(`/api/reminders/${id}/dismiss`, {method: 'POST'});
+    loadNotificationList();
+    updateBellBadge();
+  } catch(e) {}
+}
+
+function formatTime(t) {
+  if (!t) return '';
+  const d = new Date(t.replace(' ', 'T'));
+  const pad = n => String(n).padStart(2,'0');
+  return `${pad(d.getMonth()+1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+// ====== Request Notification Permission ======
+function requestNotifPermission() {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
+
 // ====== Helpers ======
 function escapeHtml(s) {
   if (!s) return '';
@@ -528,6 +781,15 @@ document.addEventListener('DOMContentLoaded', () => {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').catch(() => {});
   }
+  // Start notification polling (every 30s)
+  updateBellBadge();
+  pollNotifications();
+  notifInterval = setInterval(() => {
+    updateBellBadge();
+    pollNotifications();
+  }, 30000);
+  // Request notification permission (after user interaction)
+  document.addEventListener('click', requestNotifPermission, {once: true});
 });
 </script>
 </body>
