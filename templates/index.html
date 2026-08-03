@@ -176,9 +176,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-
 .review-card .review-section{margin-bottom:10px;}
 .review-card .review-section .rs-label{font-size:12px;font-weight:600;color:var(--brand);margin-bottom:4px;}
 .review-card .review-section .rs-content{font-size:13px;line-height:1.7;color:var(--ink);white-space:pre-wrap;}
-.review-card .review-original{font-size:12px;color:var(--muted);padding:8px 10px;background:var(--bg);border-radius:var(--radius);margin-top:8px;line-height:1.6;white-space:pre-wrap;display:none;}
-.review-card .review-original.show{display:block;}
-.review-card .review-toggle{font-size:12px;color:var(--brand);cursor:pointer;margin-top:4px;display:inline-block;}
 
 .review-input-area{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px;margin-bottom:12px;}
 .review-input-area textarea{width:100%;border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;font-size:14px;font-family:var(--font);line-height:1.6;resize:vertical;min-height:80px;max-height:200px;outline:none;background:var(--bg);color:var(--ink);margin-bottom:8px;}
@@ -477,6 +474,10 @@ async function loadReviewList() {
         <span>${r.created_at||''}</span>
         ${r.model ? `<span style="font-size:10px;color:var(--muted);">模型: ${r.model}</span>` : ''}
       </div>
+      <div class="review-section">
+        <div class="rs-label">📝 我的记录</div>
+        <div class="rs-content" style="color:var(--muted);">${escapeHtml(r.content)}</div>
+      </div>
       ${r.progress ? `
       <div class="review-section">
         <div class="rs-label">🏆 今日最大进步</div>
@@ -487,18 +488,9 @@ async function loadReviewList() {
         <div class="rs-label">💡 明日优化建议</div>
         <div class="rs-content">${escapeHtml(r.optimization)}</div>
       </div>` : ''}
-      <div class="review-toggle" onclick="toggleOriginal(this)">📝 查看原始记录</div>
-      <div class="review-original">${escapeHtml(r.content)}</div>
       <button onclick="deleteReview(${r.id})" style="margin-top:8px;font-size:11px;padding:4px 10px;border:none;border-radius:var(--radius);background:var(--bg);color:var(--muted);cursor:pointer;">🗑️ 删除</button>
     </div>
   `).join('');
-}
-
-function toggleOriginal(el) {
-  const orig = el.nextElementSibling;
-  const isShowing = orig.classList.contains('show');
-  orig.classList.toggle('show');
-  el.textContent = isShowing ? '📝 查看原始记录' : '📝 收起原始记录';
 }
 
 async function submitReview() {
@@ -516,7 +508,7 @@ async function submitReview() {
     });
     const review = await resp.json();
     if (review.id) {
-      showToast('✅ 复盘分析完成');
+      showToast('✅ 复盘已保存！原始记录与分析结果均已存储');
       input.value = '';
       loadReviewList();
     } else {
