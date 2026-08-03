@@ -172,7 +172,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-
 /* ====== Review Card ====== */
 .review-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:10px;box-shadow:var(--shadow);}
 .review-card .review-date{font-size:12px;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
-.review-card .review-date .date-badge{background:#ede9fe;color:var(--brand);padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;}
+.review-card .review-date .date-badge{background:#ede9fe;color:var(--brand);padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;}
 .review-card .review-section{margin-bottom:10px;}
 .review-card .review-section .rs-label{font-size:12px;font-weight:600;color:var(--brand);margin-bottom:4px;}
 .review-card .review-section .rs-content{font-size:13px;line-height:1.7;color:var(--ink);white-space:pre-wrap;}
@@ -470,8 +470,7 @@ async function loadReviewList() {
   container.innerHTML = reviews.map((r, i) => `
     <div class="review-card">
       <div class="review-date">
-        <span class="date-badge">复盘 #${r.id}</span>
-        <span>${r.created_at||''}</span>
+        <span class="date-badge">${formatReviewDate(r.created_at)}</span>
         ${r.model ? `<span style="font-size:10px;color:var(--muted);">模型: ${r.model}</span>` : ''}
       </div>
       <div class="review-section">
@@ -947,6 +946,14 @@ function formatTime(t) {
   const d = new Date(t.replace(' ', 'T'));
   const pad = n => String(n).padStart(2,'0');
   return `${pad(d.getMonth()+1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function formatReviewDate(t) {
+  if (!t) return '复盘';
+  const d = new Date(t.replace(' ', 'T'));
+  const weekMap = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+  const week = weekMap[d.getDay()];
+  return `${d.getMonth()+1}月${d.getDate()}日 ${week} 复盘`;
 }
 
 // ====== Request Notification Permission ======
