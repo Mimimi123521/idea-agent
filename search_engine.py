@@ -34,6 +34,7 @@ def _get_api_key():
 
 def _call_api(tool_name, arguments, timeout=20):
     """调用 AnySearch JSON-RPC API"""
+    import sys
     headers = {
         "Content-Type": "application/json",
         "X-Anysearch-Client": ANYSEARCH_CLIENT,
@@ -55,22 +56,25 @@ def _call_api(tool_name, arguments, timeout=20):
         data = resp.json()
         if "error" in data:
             error_msg = data["error"].get("message", str(data["error"]))
-            print(f"AnySearch API Error: {error_msg}")
+            print(f"AnySearch API Error: {error_msg}", file=sys.stderr)
             return None
         result = data.get("result", {})
         content = result.get("content", [])
         for item in content:
             if item.get("type") == "text":
                 return item.get("text", "")
-        return json.dumps(result, indent=2, ensure_ascii=False)
+        # 如果没有 text 类型的内容，返回整个结果
+        raw = json.dumps(result, indent=2, ensure_ascii=False)
+        print(f"AnySearch unexpected response format: {raw[:200]}", file=sys.stderr)
+        return raw
     except requests.exceptions.Timeout:
-        print("AnySearch API Timeout")
+        print("AnySearch API Timeout", file=sys.stderr)
         return None
-    except requests.exceptions.ConnectionError:
-        print("AnySearch API Connection Error")
+    except requests.exceptions.ConnectionError as e:
+        print(f"AnySearch API Connection Error: {e}", file=sys.stderr)
         return None
     except Exception as e:
-        print(f"AnySearch API Exception: {e}")
+        print(f"AnySearch API Exception: {e}", file=sys.stderr)
         return None
 
 

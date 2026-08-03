@@ -1,4 +1,4 @@
-const CACHE = 'idea-agent-v3';
+const CACHE = 'idea-agent-v4';
 const STATIC_URLS = ['/static/icons/icon-192.png', '/static/icons/icon-512.png'];
 
 self.addEventListener('install', e => {

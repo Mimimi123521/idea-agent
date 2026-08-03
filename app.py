@@ -1,5 +1,7 @@
 import os
 import json
+import sys
+import traceback
 from flask import Flask, request, jsonify, render_template, send_from_directory
 from database import init_db, add_idea, update_idea, get_idea, list_ideas, delete_idea, get_stats
 from database import add_reminder, get_pending_reminders, get_upcoming_reminders, dismiss_reminder, dismiss_reminders_by_idea, get_reminder_count
@@ -85,6 +87,28 @@ def api_search_idea(idea_id):
     update_idea(idea_id, search_results=json.dumps(results, ensure_ascii=False))
     return jsonify({'results': results, 'idea_id': idea_id})
 
+@app.route('/api/version', methods=['GET'])
+def api_version():
+    """返回部署版本信息，用于调试"""
+    info = {
+        'version': '2.0.1',
+        'search_engine': 'anysearch_http_api',
+        'python': sys.version,
+    }
+    # 尝试获取 git commit hash
+    try:
+        import subprocess
+        result = subprocess.run(
+            ['git', 'rev-parse', '--short', 'HEAD'],
+            capture_output=True, text=True, timeout=5,
+            cwd=os.path.dirname(__file__)
+        )
+        if result.returncode == 0:
+            info['commit'] = result.stdout.strip()
+    except Exception:
+        pass
+    return jsonify(info)
+
 @app.route('/api/search', methods=['POST'])
 def api_search():
     """通用搜索"""
@@ -92,8 +116,17 @@ def api_search():
     query = data.get('query', '').strip()
     if not query:
         return jsonify({'error': '搜索词不能为空'}), 400
-    results = search_web(query, max_results=5)
-    return jsonify({'results': results})
+    try:
+        results = search_web(query, max_results=5)
+        return jsonify({'results': results, 'query': query})
+    except Exception as e:
+        err_msg = f"Search error: {e}\n{traceback.format_exc()}"
+        print(err_msg, file=sys.stderr)
+        return jsonify({
+            'results': [],
+            'error': str(e),
+            'query': query
+        })
 
 @app.route('/api/batch-search', methods=['POST'])
 def api_batch_search():

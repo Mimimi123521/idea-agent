@@ -406,6 +406,10 @@ async function doSearch() {
       body: JSON.stringify({query})
     });
     const data = await resp.json();
+    if (data.error) {
+      container.innerHTML = `<div class="empty-state"><p>搜索出错: ${escapeHtml(data.error)}</p></div>`;
+      return;
+    }
     if (!data.results || !data.results.length) {
       container.innerHTML = '<div class="empty-state"><p>未找到相关结果</p></div>';
       return;
@@ -419,7 +423,7 @@ async function doSearch() {
       </div>
     `).join('');
   } catch(e) {
-    container.innerHTML = '<div class="empty-state"><p>搜索失败，请稍后重试</p></div>';
+    container.innerHTML = `<div class="empty-state"><p>搜索失败: ${escapeHtml(e.message)}</p></div>`;
   }
 }
 
