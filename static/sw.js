@@ -1,26 +1,63 @@
-const CACHE = 'idea-agent-v2';
-const URLS = ['/', '/static/css/app.css', '/static/js/app.js', '/static/icons/icon-192.png', '/static/icons/icon-512.png'];
+const CACHE = 'idea-agent-v3';
+const STATIC_URLS = ['/static/icons/icon-192.png', '/static/icons/icon-512.png'];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(URLS)));
+  e.waitUntil(
+    caches.open(CACHE).then(c => c.addAll(STATIC_URLS).catch(() => {}))
+  );
   self.skipWaiting();
 });
 
 self.addEventListener('activate', e => {
-  e.waitUntil(clients.claim());
+  e.waitUntil(
+    caches.keys().then(keys => {
+      return Promise.all(
+        keys.filter(k => k !== CACHE).map(k => caches.delete(k))
+      );
+    }).then(() => clients.claim())
+  );
 });
 
 self.addEventListener('fetch', e => {
-  if (e.request.url.includes('/api/')) {
+  const url = new URL(e.request.url);
+
+  // API requests: always network, fallback to offline response
+  if (url.pathname.includes('/api/')) {
     e.respondWith(fetch(e.request).catch(() => new Response(JSON.stringify({offline: true}), {status: 503})));
-  } else {
-    e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
+    return;
   }
+
+  // Navigation requests (HTML pages): network-first, fallback to cache
+  if (e.request.mode === 'navigate') {
+    e.respondWith(
+      fetch(e.request)
+        .then(resp => {
+          // Cache the latest page
+          const clone = resp.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+          return resp;
+        })
+        .catch(() => caches.match(e.request).then(r => r || caches.match('/')))
+    );
+    return;
+  }
+
+  // Static assets: cache-first, fallback to network
+  e.respondWith(
+    caches.match(e.request).then(r => r || fetch(e.request).then(resp => {
+      // Cache new static assets
+      if (resp.ok && (url.pathname.startsWith('/static/') || url.pathname === '/manifest.json' || url.pathname === '/sw.js')) {
+        const clone = resp.clone();
+        caches.open(CACHE).then(c => c.put(e.request, clone));
+      }
+      return resp;
+    }))
+  );
 });
 
 // ====== Notification Handling ======
 
-// Display notification when received from client or server push
+// Display notification when received from server push
 self.addEventListener('push', e => {
   let data = { title: '灵感管家', body: '你有新的提醒', icon: '/static/icons/icon-192.png' };
   try {
@@ -47,7 +84,6 @@ self.addEventListener('notificationclick', e => {
   const targetUrl = (e.notification.data && e.notification.data.url) || '/';
   e.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
-      // If app is already open, focus it
       for (const client of windowClients) {
         if (client.url.includes(self.location.origin) && 'focus' in client) {
           return client.focus().then(c => {
@@ -56,7 +92,6 @@ self.addEventListener('notificationclick', e => {
           });
         }
       }
-      // Otherwise open a new window
       if (clients.openWindow) {
         return clients.openWindow(targetUrl);
       }
@@ -76,5 +111,12 @@ self.addEventListener('message', e => {
       vibrate: [200, 100, 200],
       data: { url: d.url || '/' }
     });
+  }
+});
+
+// Allow page to trigger immediate SW update
+self.addEventListener('message', e => {
+  if (e.data && e.data.type === 'skip-waiting') {
+    self.skipWaiting();
   }
 });
