@@ -42,6 +42,15 @@ def init_db():
             created_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
             FOREIGN KEY (idea_id) REFERENCES ideas(id)
         );
+
+        CREATE TABLE IF NOT EXISTS daily_reviews (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+            content TEXT NOT NULL,
+            progress TEXT DEFAULT '',
+            optimization TEXT DEFAULT '',
+            raw_response TEXT DEFAULT ''
+        );
     """)
     conn.commit()
     conn.close()
@@ -188,3 +197,36 @@ def get_reminder_count():
     ).fetchone()
     conn.close()
     return row['cnt'] if row else 0
+
+# ============ Daily Reviews ============
+
+def add_daily_review(content, progress='', optimization='', raw_response=''):
+    conn = get_db()
+    cur = conn.execute(
+        "INSERT INTO daily_reviews (content, progress, optimization, raw_response) VALUES (?, ?, ?, ?)",
+        (content, progress, optimization, raw_response)
+    )
+    review_id = cur.lastrowid
+    conn.commit()
+    conn.close()
+    return review_id
+
+def get_daily_review(review_id):
+    conn = get_db()
+    row = conn.execute("SELECT * FROM daily_reviews WHERE id=?", (review_id,)).fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+def list_daily_reviews(limit=30):
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT * FROM daily_reviews ORDER BY created_at DESC LIMIT ?", (limit,)
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def delete_daily_review(review_id):
+    conn = get_db()
+    conn.execute("DELETE FROM daily_reviews WHERE id=?", (review_id,))
+    conn.commit()
+    conn.close()

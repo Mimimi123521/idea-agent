@@ -169,6 +169,26 @@ body{font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-
 .search-box input:focus{border-color:var(--brand-light);}
 .search-box button{padding:10px 16px;border:none;border-radius:var(--radius);background:var(--brand);color:#fff;font-size:13px;font-weight:500;cursor:pointer;}
 
+/* ====== Review Card ====== */
+.review-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:10px;box-shadow:var(--shadow);}
+.review-card .review-date{font-size:12px;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.review-card .review-date .date-badge{background:#ede9fe;color:var(--brand);padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;}
+.review-card .review-section{margin-bottom:10px;}
+.review-card .review-section .rs-label{font-size:12px;font-weight:600;color:var(--brand);margin-bottom:4px;}
+.review-card .review-section .rs-content{font-size:13px;line-height:1.7;color:var(--ink);white-space:pre-wrap;}
+.review-card .review-original{font-size:12px;color:var(--muted);padding:8px 10px;background:var(--bg);border-radius:var(--radius);margin-top:8px;line-height:1.6;white-space:pre-wrap;display:none;}
+.review-card .review-original.show{display:block;}
+.review-card .review-toggle{font-size:12px;color:var(--brand);cursor:pointer;margin-top:4px;display:inline-block;}
+
+.review-input-area{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px;margin-bottom:12px;}
+.review-input-area textarea{width:100%;border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;font-size:14px;font-family:var(--font);line-height:1.6;resize:vertical;min-height:80px;max-height:200px;outline:none;background:var(--bg);color:var(--ink);margin-bottom:8px;}
+.review-input-area textarea:focus{border-color:var(--brand-light);}
+.review-submit-btn{width:100%;padding:10px;border:none;border-radius:var(--radius);background:var(--brand);color:#fff;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;}
+.review-submit-btn:active{transform:scale(.97);}
+.review-submit-btn:disabled{opacity:.4;cursor:not-allowed;}
+.review-submit-btn .spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;margin-right:6px;vertical-align:middle;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
 /* ====== Responsive ====== */
 @media (min-width:480px){
   .app{box-shadow:0 0 20px rgba(0,0,0,.06);border-left:1px solid var(--border);border-right:1px solid var(--border);}
@@ -195,6 +215,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-
     <button class="tab-btn" data-tab="work" onclick="switchTab('work')">🔧 工作</button>
     <button class="tab-btn" data-tab="life" onclick="switchTab('life')">🌱 生活</button>
     <button class="tab-btn" data-tab="todo" onclick="switchTab('todo')">✅ 待办</button>
+    <button class="tab-btn" data-tab="review" onclick="switchTab('review')">📋 复盘</button>
     <button class="tab-btn" data-tab="search" onclick="switchTab('search')">🔍 搜索</button>
   </nav>
 
@@ -283,8 +304,13 @@ function showLoading() {
 function switchTab(tab) {
   currentTab = tab;
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
-  renderIdeas();
-  if (tab === 'search') renderSearch();
+  if (tab === 'review') {
+    renderReview();
+  } else if (tab === 'search') {
+    renderSearch();
+  } else {
+    renderIdeas();
+  }
 }
 
 // ====== Fetch Ideas ======
@@ -319,7 +345,7 @@ function renderStats(stats) {
 // ====== Render Ideas ======
 function renderIdeas() {
   const container = document.getElementById('ideaList');
-  if (currentTab === 'search') return;
+  if (currentTab === 'search' || currentTab === 'review') return;
   let ideas = allIdeas;
   if (currentTab === 'todo') {
     ideas = allIdeas.filter(i => i.decision && i.decision.startsWith('todo'));
@@ -403,6 +429,116 @@ async function doSearch() {
 function quickSearch(q) {
   const input = document.getElementById('searchInput');
   if (input) { input.value = q; doSearch(); }
+}
+
+// ====== Daily Review ======
+
+async function fetchReviews() {
+  try {
+    const resp = await fetch('/api/reviews');
+    const data = await resp.json();
+    return data.reviews || [];
+  } catch(e) {
+    return [];
+  }
+}
+
+function renderReview() {
+  const container = document.getElementById('ideaList');
+  container.innerHTML = `
+    <div class="review-input-area">
+      <div class="label" style="margin-bottom:6px;">📝 今天做了什么？</div>
+      <textarea id="reviewInput" placeholder="写下今天的工作内容、进展、遇到的问题、想法…&#10;&#10;例如：&#10;- 完成了台架试验方案评审&#10;- 与供应商讨论了密封件交期&#10;- 发现曲轴扭振数据异常，需要进一步排查"></textarea>
+      <button class="review-submit-btn" id="reviewSubmitBtn" onclick="submitReview()">🤖 开始复盘分析</button>
+    </div>
+    <div id="reviewList">
+      <div class="loading-dots"><span></span><span></span><span></span></div>
+    </div>
+  `;
+  loadReviewList();
+}
+
+async function loadReviewList() {
+  const reviews = await fetchReviews();
+  const container = document.getElementById('reviewList');
+  if (!reviews.length) {
+    container.innerHTML = `
+      <div class="empty-state" style="padding:30px 20px;">
+        <div class="icon">📋</div>
+        <h3>还没有复盘记录</h3>
+        <p>写下今天的工作内容，AI 帮你分析进步和优化方向</p>
+      </div>`;
+    return;
+  }
+  container.innerHTML = reviews.map((r, i) => `
+    <div class="review-card">
+      <div class="review-date">
+        <span class="date-badge">复盘 #${r.id}</span>
+        <span>${r.created_at||''}</span>
+        ${r.model ? `<span style="font-size:10px;color:var(--muted);">模型: ${r.model}</span>` : ''}
+      </div>
+      ${r.progress ? `
+      <div class="review-section">
+        <div class="rs-label">🏆 今日最大进步</div>
+        <div class="rs-content">${escapeHtml(r.progress)}</div>
+      </div>` : ''}
+      ${r.optimization ? `
+      <div class="review-section">
+        <div class="rs-label">💡 明日优化建议</div>
+        <div class="rs-content">${escapeHtml(r.optimization)}</div>
+      </div>` : ''}
+      <div class="review-toggle" onclick="toggleOriginal(this)">📝 查看原始记录</div>
+      <div class="review-original">${escapeHtml(r.content)}</div>
+      <button onclick="deleteReview(${r.id})" style="margin-top:8px;font-size:11px;padding:4px 10px;border:none;border-radius:var(--radius);background:var(--bg);color:var(--muted);cursor:pointer;">🗑️ 删除</button>
+    </div>
+  `).join('');
+}
+
+function toggleOriginal(el) {
+  const orig = el.nextElementSibling;
+  const isShowing = orig.classList.contains('show');
+  orig.classList.toggle('show');
+  el.textContent = isShowing ? '📝 查看原始记录' : '📝 收起原始记录';
+}
+
+async function submitReview() {
+  const input = document.getElementById('reviewInput');
+  const btn = document.getElementById('reviewSubmitBtn');
+  const content = input.value.trim();
+  if (!content) { showToast('请输入今天的工作内容'); return; }
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>AI 分析中…';
+  try {
+    const resp = await fetch('/api/reviews', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({content})
+    });
+    const review = await resp.json();
+    if (review.id) {
+      showToast('✅ 复盘分析完成');
+      input.value = '';
+      loadReviewList();
+    } else {
+      showToast('分析失败，请重试');
+    }
+  } catch(e) {
+    showToast('网络错误，请重试');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '🤖 开始复盘分析';
+  }
+}
+
+async function deleteReview(id) {
+  if (!confirm('确认删除这条复盘记录？')) return;
+  try {
+    await fetch(`/api/reviews/${id}`, {method:'DELETE'});
+    showToast('已删除');
+    loadReviewList();
+  } catch(e) {
+    showToast('删除失败');
+  }
 }
 
 // ====== Submit Idea ======

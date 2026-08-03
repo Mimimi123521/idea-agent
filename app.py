@@ -3,8 +3,10 @@ import json
 from flask import Flask, request, jsonify, render_template, send_from_directory
 from database import init_db, add_idea, update_idea, get_idea, list_ideas, delete_idea, get_stats
 from database import add_reminder, get_pending_reminders, get_upcoming_reminders, dismiss_reminder, dismiss_reminders_by_idea, get_reminder_count
+from database import add_daily_review, get_daily_review, list_daily_reviews, delete_daily_review
 from agent_engine import process_idea
 from search_engine import search_web, batch_search
+from review_engine import analyze_daily_review
 
 app = Flask(__name__)
 
@@ -148,6 +150,48 @@ def api_dismiss_reminder(reminder_id):
 @app.route('/api/ideas/<int:idea_id>/reminders/dismiss', methods=['POST'])
 def api_dismiss_idea_reminders(idea_id):
     dismiss_reminders_by_idea(idea_id)
+    return jsonify({'ok': True})
+
+# ============ Daily Review Routes ============
+
+@app.route('/api/reviews', methods=['POST'])
+def api_create_review():
+    """创建每日复盘"""
+    data = request.get_json()
+    content = data.get('content', '').strip()
+    if not content:
+        return jsonify({'error': '内容不能为空'}), 400
+
+    # 调用 DeepSeek API 分析
+    analysis = analyze_daily_review(content)
+    review_id = add_daily_review(
+        content=content,
+        progress=analysis.get('progress', ''),
+        optimization=analysis.get('optimization', ''),
+        raw_response=analysis.get('raw_response', '')
+    )
+    review = get_daily_review(review_id)
+    review['model'] = analysis.get('model', 'unknown')
+    return jsonify(review), 201
+
+@app.route('/api/reviews', methods=['GET'])
+def api_list_reviews():
+    """获取每日复盘列表"""
+    reviews = list_daily_reviews()
+    return jsonify({'reviews': reviews})
+
+@app.route('/api/reviews/<int:review_id>', methods=['GET'])
+def api_get_review(review_id):
+    """获取单条复盘"""
+    review = get_daily_review(review_id)
+    if not review:
+        return jsonify({'error': 'not found'}), 404
+    return jsonify(review)
+
+@app.route('/api/reviews/<int:review_id>', methods=['DELETE'])
+def api_delete_review(review_id):
+    """删除复盘"""
+    delete_daily_review(review_id)
     return jsonify({'ok': True})
 
 # ============ PWA Support ============
