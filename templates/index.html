@@ -1040,17 +1040,37 @@ function getCardTagHtml(idea) {
   return `<span class="tag ${cls} tag-clickable" onclick="event.stopPropagation();switchTab('${tab}')">${tag}</span>`;
 }
 
+// ====== Version Check ======
+const APP_VERSION = '2.2.0';
+
+async function checkVersion() {
+  try {
+    const resp = await fetch('/api/version?_=' + Date.now());
+    const data = await resp.json();
+    if (data.version && data.version !== APP_VERSION) {
+      console.log('New version detected:', data.version, 'current:', APP_VERSION);
+      // Force clear all caches and reload
+      if ('caches' in window) {
+        caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))));
+      }
+      setTimeout(() => window.location.reload(true), 500);
+    }
+  } catch(e) {}
+}
+
 // ====== Init ======
 document.addEventListener('DOMContentLoaded', () => {
   fetchIdeas();
+  // Check version on startup
+  checkVersion();
   // Register service worker with auto-update
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js').then(reg => {
+    navigator.serviceWorker.register('/sw.js?v=' + APP_VERSION).then(reg => {
       // Check for SW updates every 30 seconds
       setInterval(() => reg.update().catch(() => {}), 30000);
       // When a new SW takes over, reload the page
       navigator.serviceWorker.addEventListener('controllerchange', () => {
-        window.location.reload();
+        window.location.reload(true);
       });
     }).catch(() => {});
   }
