@@ -302,7 +302,7 @@ function switchTab(tab) {
   } else if (tab === 'search') {
     renderSearch();
   } else {
-    renderIdeas();
+    fetchIdeas();
   }
 }
 
@@ -344,7 +344,11 @@ function renderIdeas() {
   const container = document.getElementById('ideaList');
   if (currentTab === 'search' || currentTab === 'review') return;
   let ideas = allIdeas;
-  if (currentTab === 'todo') {
+  if (currentTab === 'work') {
+    ideas = allIdeas.filter(i => i.domain === 'work');
+  } else if (currentTab === 'life') {
+    ideas = allIdeas.filter(i => i.domain === 'life');
+  } else if (currentTab === 'todo') {
     ideas = allIdeas.filter(i => i.decision && i.decision.startsWith('todo'));
   }
 
@@ -1041,7 +1045,7 @@ function getCardTagHtml(idea) {
 }
 
 // ====== Version Check ======
-const APP_VERSION = '2.2.0';
+const APP_VERSION = '2.2.1';
 
 async function checkVersion() {
   try {

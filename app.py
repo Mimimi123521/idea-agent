@@ -92,7 +92,7 @@ def api_search_idea(idea_id):
 def api_version():
     """返回部署版本信息，用于调试"""
     info = {
-        'version': '2.2.0',
+        'version': '2.2.1',
         'search_engine': 'anysearch_http_api',
         'python': sys.version,
     }
