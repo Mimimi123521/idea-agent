@@ -15,6 +15,16 @@ app = Flask(__name__)
 # Initialize database on startup
 init_db()
 
+# ============ No-Cache Headers ============
+
+@app.after_request
+def add_no_cache_headers(response):
+    """禁止浏览器缓存 HTML 和 API 响应，确保手机端始终获取最新版本"""
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
+
 # ============ API Routes ============
 
 @app.route('/')
@@ -92,7 +102,7 @@ def api_search_idea(idea_id):
 def api_version():
     """返回部署版本信息，用于调试"""
     info = {
-        'version': '2.2.1',
+        'version': '2.3.0',
         'search_engine': 'anysearch_http_api',
         'python': sys.version,
     }

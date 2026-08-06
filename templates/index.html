@@ -1045,7 +1045,7 @@ function getCardTagHtml(idea) {
 }
 
 // ====== Version Check ======
-const APP_VERSION = '2.2.1';
+const APP_VERSION = '2.3.0';
 
 async function checkVersion() {
   try {
@@ -1053,11 +1053,18 @@ async function checkVersion() {
     const data = await resp.json();
     if (data.version && data.version !== APP_VERSION) {
       console.log('New version detected:', data.version, 'current:', APP_VERSION);
-      // Force clear all caches and reload
+      // Unregister old Service Worker
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(regs => {
+          regs.forEach(r => r.unregister());
+        });
+      }
+      // Force clear all caches
       if ('caches' in window) {
         caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))));
       }
-      setTimeout(() => window.location.reload(true), 500);
+      // Hard reload after clearing
+      setTimeout(() => window.location.reload(true), 800);
     }
   } catch(e) {}
 }
@@ -1070,11 +1077,17 @@ document.addEventListener('DOMContentLoaded', () => {
   // Register service worker with auto-update
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js?v=' + APP_VERSION).then(reg => {
-      // Check for SW updates every 30 seconds
-      setInterval(() => reg.update().catch(() => {}), 30000);
+      // Immediately check for updates
+      reg.update().catch(() => {});
+      // Check for SW updates every 15 seconds
+      setInterval(() => reg.update().catch(() => {}), 15000);
       // When a new SW takes over, reload the page
+      let refreshing = false;
       navigator.serviceWorker.addEventListener('controllerchange', () => {
-        window.location.reload(true);
+        if (!refreshing) {
+          refreshing = true;
+          window.location.reload(true);
+        }
       });
     }).catch(() => {});
   }
