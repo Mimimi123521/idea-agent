@@ -166,10 +166,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-
 .search-box button{padding:10px 16px;border:none;border-radius:var(--radius);background:var(--brand);color:#fff;font-size:13px;font-weight:500;cursor:pointer;}
 
 /* ====== Review Card ====== */
-.review-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:10px;box-shadow:var(--shadow);}
+.review-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:10px;box-shadow:var(--shadow);cursor:pointer;transition:all .15s;}
+.review-card:active{transform:scale(.98);}
 .review-card .review-date{font-size:12px;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
 .review-card .review-date .date-badge{background:#ede9fe;color:var(--brand);padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;}
-.review-card .review-section{margin-bottom:10px;}
+.review-card .review-section{margin-bottom:10px;margin-top:10px;border-top:1px solid var(--border);padding-top:10px;}
 .review-card .review-section .rs-label{font-size:12px;font-weight:600;color:var(--brand);margin-bottom:4px;}
 .review-card .review-section .rs-content{font-size:13px;line-height:1.7;color:var(--ink);white-space:pre-wrap;}
 
@@ -472,28 +473,47 @@ async function loadReviewList() {
     return;
   }
   container.innerHTML = reviews.map((r, i) => `
-    <div class="review-card">
+    <div class="review-card" id="review-card-${r.id}" onclick="toggleReviewDetail(${r.id})">
       <div class="review-date">
         <span class="date-badge">${formatReviewDate(r.created_at)}</span>
-        ${r.model ? `<span style="font-size:10px;color:var(--muted);">模型: ${r.model}</span>` : ''}
+        ${r.model ? `<span style="font-size:10px;color:var(--muted);">${r.model}</span>` : ''}
+        <span style="flex:1;"></span>
+        <span class="review-toggle-arrow" id="review-arrow-${r.id}">▶</span>
       </div>
-      <div class="review-section">
-        <div class="rs-label">📝 我的记录</div>
-        <div class="rs-content" style="color:var(--muted);">${escapeHtml(r.content)}</div>
+      <div class="review-date" style="font-size:12px;color:var(--muted);margin-top:4px;">
+        ${escapeHtml((r.content||'').slice(0,60))}${(r.content||'').length > 60 ? '…' : ''}
       </div>
-      ${r.progress ? `
-      <div class="review-section">
-        <div class="rs-label">🏆 今日最大进步</div>
-        <div class="rs-content">${escapeHtml(r.progress)}</div>
-      </div>` : ''}
-      ${r.optimization ? `
-      <div class="review-section">
-        <div class="rs-label">💡 明日优化建议</div>
-        <div class="rs-content">${escapeHtml(r.optimization)}</div>
-      </div>` : ''}
-      <button onclick="deleteReview(${r.id})" style="margin-top:8px;font-size:11px;padding:4px 10px;border:none;border-radius:var(--radius);background:var(--bg);color:var(--muted);cursor:pointer;">🗑️ 删除</button>
+      <div class="review-detail" id="review-detail-${r.id}" style="display:none;">
+        <div class="review-section">
+          <div class="rs-label">📝 我的记录</div>
+          <div class="rs-content" style="color:var(--muted);">${escapeHtml(r.content)}</div>
+        </div>
+        ${r.progress ? `
+        <div class="review-section">
+          <div class="rs-label">🏆 今日最大进步</div>
+          <div class="rs-content">${escapeHtml(r.progress)}</div>
+        </div>` : ''}
+        ${r.optimization ? `
+        <div class="review-section">
+          <div class="rs-label">💡 明日优化建议</div>
+          <div class="rs-content">${escapeHtml(r.optimization)}</div>
+        </div>` : ''}
+        <button onclick="event.stopPropagation();deleteReview(${r.id})" style="margin-top:8px;font-size:11px;padding:4px 10px;border:none;border-radius:var(--radius);background:var(--bg);color:var(--muted);cursor:pointer;">🗑️ 删除</button>
+      </div>
     </div>
   `).join('');
+}
+
+function toggleReviewDetail(id) {
+  const detail = document.getElementById('review-detail-' + id);
+  const arrow = document.getElementById('review-arrow-' + id);
+  if (detail.style.display === 'none') {
+    detail.style.display = 'block';
+    arrow.textContent = '▼';
+  } else {
+    detail.style.display = 'none';
+    arrow.textContent = '▶';
+  }
 }
 
 async function submitReview() {
@@ -1045,7 +1065,7 @@ function getCardTagHtml(idea) {
 }
 
 // ====== Version Check ======
-const APP_VERSION = '2.3.0';
+const APP_VERSION = '2.3.1';
 
 async function checkVersion() {
   try {
