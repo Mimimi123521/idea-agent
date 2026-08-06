@@ -4,6 +4,7 @@ import sys
 import traceback
 from flask import Flask, request, jsonify, render_template, send_from_directory
 from database import init_db, add_idea, update_idea, get_idea, list_ideas, delete_idea, get_stats
+from database import search_ideas, get_today_todos, complete_todo, carry_forward_overdue, get_historical_ideas
 from database import add_reminder, get_pending_reminders, get_upcoming_reminders, dismiss_reminder, dismiss_reminders_by_idea, get_reminder_count
 from database import add_daily_review, get_daily_review, list_daily_reviews, delete_daily_review
 from agent_engine import process_idea
@@ -54,12 +55,9 @@ def api_create_idea():
     content = data.get('content', '').strip()
     if not content:
         return jsonify({'error': '内容不能为空'}), 400
-    # 1. Save to database
     idea_id = add_idea(content)
-    # 2. Run agent analysis
     analysis = process_idea(content)
     update_idea(idea_id, **analysis)
-    # 3. Return result
     idea = get_idea(idea_id)
     return jsonify(idea), 201
 
@@ -91,22 +89,18 @@ def api_search_idea(idea_id):
     idea = get_idea(idea_id)
     if not idea:
         return jsonify({'error': 'not found'}), 404
-    content = idea['content']
-    # 构造搜索词
-    keywords = content[:50]
+    keywords = idea['content'][:50]
     results = search_web(keywords, max_results=5)
     update_idea(idea_id, search_results=json.dumps(results, ensure_ascii=False))
     return jsonify({'results': results, 'idea_id': idea_id})
 
 @app.route('/api/version', methods=['GET'])
 def api_version():
-    """返回部署版本信息，用于调试"""
     info = {
-        'version': '2.3.1',
+        'version': '3.0.1',
         'search_engine': 'anysearch_http_api',
         'python': sys.version,
     }
-    # 尝试获取 git commit hash
     try:
         import subprocess
         result = subprocess.run(
@@ -122,7 +116,7 @@ def api_version():
 
 @app.route('/api/search', methods=['POST'])
 def api_search():
-    """通用搜索"""
+    """外部搜索"""
     data = request.get_json()
     query = data.get('query', '').strip()
     if not query:
@@ -131,17 +125,46 @@ def api_search():
         results = search_web(query, max_results=5)
         return jsonify({'results': results, 'query': query})
     except Exception as e:
-        err_msg = f"Search error: {e}\n{traceback.format_exc()}"
-        print(err_msg, file=sys.stderr)
-        return jsonify({
-            'results': [],
-            'error': str(e),
-            'query': query
-        })
+        return jsonify({'results': [], 'error': str(e), 'query': query})
+
+# ============ Global Search (Local) ============
+
+@app.route('/api/ideas/search', methods=['GET'])
+def api_search_ideas():
+    """全局搜索本地灵感：按关键词或日期"""
+    keyword = request.args.get('keyword', '').strip()
+    date_from = request.args.get('date_from', '').strip()
+    date_to = request.args.get('date_to', '').strip()
+    if not keyword and not date_from and not date_to:
+        return jsonify({'results': [], 'message': '请输入关键词或日期'})
+    results = search_ideas(keyword=keyword or None, date_from=date_from or None, date_to=date_to or None)
+    return jsonify({'results': results, 'count': len(results)})
+
+# ============ Today's Todos ============
+
+@app.route('/api/todos', methods=['GET'])
+def api_get_todos():
+    """获取今日待办列表"""
+    carry_forward_overdue()  # 先顺延过期待办
+    todos = get_today_todos()
+    return jsonify({'todos': todos, 'count': len(todos)})
+
+@app.route('/api/todos/<int:idea_id>/complete', methods=['POST'])
+def api_complete_todo(idea_id):
+    """标记待办为已完成"""
+    complete_todo(idea_id)
+    return jsonify({'ok': True})
+
+# ============ Historical Memories ============
+
+@app.route('/api/memories', methods=['GET'])
+def api_memories():
+    """获取上个月今日和去年今日的灵感"""
+    memories = get_historical_ideas()
+    return jsonify(memories)
 
 @app.route('/api/batch-search', methods=['POST'])
 def api_batch_search():
-    """批量搜索"""
     data = request.get_json()
     queries = data.get('queries', [])
     if not queries:
@@ -157,7 +180,6 @@ def api_stats():
 
 @app.route('/api/ideas/<int:idea_id>/reminder', methods=['POST'])
 def api_set_reminder(idea_id):
-    """为灵感设置提醒"""
     idea = get_idea(idea_id)
     if not idea:
         return jsonify({'error': 'not found'}), 404
@@ -172,13 +194,11 @@ def api_set_reminder(idea_id):
 
 @app.route('/api/reminders/pending', methods=['GET'])
 def api_pending_reminders():
-    """获取当前已到期的待提醒"""
     reminders = get_pending_reminders()
     return jsonify({'reminders': reminders, 'count': len(reminders)})
 
 @app.route('/api/reminders/upcoming', methods=['GET'])
 def api_upcoming_reminders():
-    """获取所有待提醒"""
     reminders = get_upcoming_reminders()
     return jsonify({'reminders': reminders})
 
@@ -200,13 +220,10 @@ def api_dismiss_idea_reminders(idea_id):
 
 @app.route('/api/reviews', methods=['POST'])
 def api_create_review():
-    """创建每日复盘"""
     data = request.get_json()
     content = data.get('content', '').strip()
     if not content:
         return jsonify({'error': '内容不能为空'}), 400
-
-    # 调用 DeepSeek API 分析
     analysis = analyze_daily_review(content)
     review_id = add_daily_review(
         content=content,
@@ -220,13 +237,11 @@ def api_create_review():
 
 @app.route('/api/reviews', methods=['GET'])
 def api_list_reviews():
-    """获取每日复盘列表"""
     reviews = list_daily_reviews()
     return jsonify({'reviews': reviews})
 
 @app.route('/api/reviews/<int:review_id>', methods=['GET'])
 def api_get_review(review_id):
-    """获取单条复盘"""
     review = get_daily_review(review_id)
     if not review:
         return jsonify({'error': 'not found'}), 404
@@ -234,7 +249,6 @@ def api_get_review(review_id):
 
 @app.route('/api/reviews/<int:review_id>', methods=['DELETE'])
 def api_delete_review(review_id):
-    """删除复盘"""
     delete_daily_review(review_id)
     return jsonify({'ok': True})
 

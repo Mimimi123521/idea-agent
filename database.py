@@ -1,7 +1,7 @@
 import sqlite3
 import os
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 
 DB_PATH = os.path.join(os.path.dirname(__file__), 'data', 'ideas.db')
 
@@ -147,6 +147,107 @@ def get_stats():
             stats['archive'] += cnt
     return stats
 
+# ============ Global Search ============
+
+def search_ideas(keyword=None, date_from=None, date_to=None, limit=50):
+    """全局搜索灵感：按关键词或日期范围"""
+    conn = get_db()
+    query = "SELECT * FROM ideas WHERE 1=1"
+    params = []
+    if keyword:
+        query += " AND content LIKE ?"
+        params.append(f'%{keyword}%')
+    if date_from:
+        query += " AND created_at >= ?"
+        params.append(date_from)
+    if date_to:
+        query += " AND created_at <= ?"
+        params.append(date_to + ' 23:59:59')
+    query += " ORDER BY created_at DESC LIMIT ?"
+    params.append(limit)
+    rows = conn.execute(query, params).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+# ============ Today's Todos ============
+
+def get_today_todos():
+    """获取今日待办：待办决策 + 提醒时间在今天或已过期，按提醒时间排序"""
+    conn = get_db()
+    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    today = datetime.now().strftime('%Y-%m-%d')
+    rows = conn.execute(
+        "SELECT i.*, r.remind_at, r.id as reminder_id FROM ideas i "
+        "LEFT JOIN reminders r ON i.id = r.idea_id AND r.status = 'pending' "
+        "WHERE i.status = 'active' "
+        "AND (i.decision = 'todo-work' OR i.decision = 'todo-life') "
+        "ORDER BY CASE WHEN r.remind_at IS NULL THEN 1 ELSE 0 END, r.remind_at ASC"
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def complete_todo(idea_id):
+    """标记待办为已完成"""
+    conn = get_db()
+    conn.execute("UPDATE ideas SET status='completed', updated_at=datetime('now','localtime') WHERE id=?", (idea_id,))
+    # 同时关闭关联提醒
+    conn.execute("UPDATE reminders SET status='dismissed' WHERE idea_id=? AND status='pending'", (idea_id,))
+    conn.commit()
+    conn.close()
+
+def carry_forward_overdue():
+    """将过期未完成的待办提醒自动顺延到今天"""
+    conn = get_db()
+    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    today = datetime.now().strftime('%Y-%m-%d')
+    # 找到所有过期且未完成的待办提醒
+    rows = conn.execute(
+        "SELECT r.id, r.remind_at FROM reminders r "
+        "JOIN ideas i ON r.idea_id = i.id "
+        "WHERE r.status = 'pending' AND i.status = 'active' "
+        "AND r.remind_at < datetime('now','localtime')"
+    ).fetchall()
+    for row in rows:
+        r = dict(row)
+        # 顺延到明天，避免逾期通知一直触发
+        tomorrow = (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d')
+        old_time = r['remind_at'].split(' ')[-1] if ' ' in r['remind_at'] else '09:00:00'
+        new_remind = f"{tomorrow} {old_time}"
+        conn.execute("UPDATE reminders SET remind_at = ? WHERE id = ?", (new_remind, r['id']))
+    conn.commit()
+    conn.close()
+
+# ============ Historical Memories ============
+
+def get_historical_ideas():
+    """获取上个月今日和去年今日的灵感"""
+    conn = get_db()
+    today = datetime.now()
+    results = {'last_month': [], 'last_year': []}
+
+    # 上个月今日
+    last_month = today.replace(day=1) - timedelta(days=1)
+    last_month_day = last_month.replace(day=min(today.day, last_month.day))
+    if last_month_day.month == last_month.month:
+        date_str = last_month_day.strftime('%Y-%m-%d')
+        rows = conn.execute(
+            "SELECT * FROM ideas WHERE created_at >= ? AND created_at < ? ORDER BY created_at DESC",
+            (date_str + ' 00:00:00', date_str + ' 23:59:59')
+        ).fetchall()
+        results['last_month'] = [dict(r) for r in rows]
+
+    # 去年今日
+    last_year_day = today.replace(year=today.year - 1)
+    date_str = last_year_day.strftime('%Y-%m-%d')
+    rows = conn.execute(
+        "SELECT * FROM ideas WHERE created_at >= ? AND created_at < ? ORDER BY created_at DESC",
+        (date_str + ' 00:00:00', date_str + ' 23:59:59')
+    ).fetchall()
+    results['last_year'] = [dict(r) for r in rows]
+
+    conn.close()
+    return results
+
 # ============ Reminders ============
 
 def add_reminder(idea_id, remind_at, title='', message=''):
@@ -161,7 +262,6 @@ def add_reminder(idea_id, remind_at, title='', message=''):
     return reminder_id
 
 def get_pending_reminders():
-    """获取当前时间已到期的待提醒"""
     conn = get_db()
     rows = conn.execute(
         "SELECT r.*, i.content as idea_content, i.decision FROM reminders r "
@@ -173,7 +273,6 @@ def get_pending_reminders():
     return [dict(r) for r in rows]
 
 def get_upcoming_reminders():
-    """获取所有待提醒（含未到期）"""
     conn = get_db()
     rows = conn.execute(
         "SELECT r.*, i.content as idea_content, i.decision FROM reminders r "

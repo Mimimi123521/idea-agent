@@ -1,6 +1,6 @@
 """
 灵感管家 Agent 引擎
-实现提示词 4 的归类与分析逻辑
+实现归类与分析逻辑（v3.0 去掉四维评分，简化为领域+标签+决策）
 """
 import re
 from datetime import datetime
@@ -86,7 +86,7 @@ def detect_domain(content):
     elif life_score > work_score and life_score >= 1:
         return 'life'
     elif work_score == life_score and work_score > 0:
-        return 'work'  # 模棱两可默认工作
+        return 'work'
     return 'other'
 
 def suggest_tags(content, domain):
@@ -94,8 +94,6 @@ def suggest_tags(content, domain):
     content_lower = content.lower()
     matched = []
     if domain == 'work':
-        tag_pool = WORK_TAGS
-        # 特定关键词匹配
         if any(kw in content for kw in ['架构','结构','曲轴','活塞','缸体','缸盖','水平对置','Boxer','对置']):
             matched.append('engine-arch')
         if any(kw in content for kw in ['燃烧','喷射','点火','空燃比','lambda','早燃','爆震']):
@@ -119,7 +117,6 @@ def suggest_tags(content, domain):
         if any(kw in content for kw in ['供应链','供应商','采购','外协','配套']):
             matched.append('supply-chain')
     elif domain == 'life':
-        tag_pool = LIFE_TAGS
         if any(kw in content for kw in ['感悟','随想','反思','想法','心情']):
             matched.append('daily-thought')
         if any(kw in content for kw in ['购物','缴费','买菜','水电','物业','买']):
@@ -137,80 +134,36 @@ def suggest_tags(content, domain):
         if any(kw in content for kw in ['财务','理财','投资','股票','基金','保险','工资']):
             matched.append('finance')
     else:
-        tag_pool = OTHER_TAGS
         if any(kw in content for kw in ['想法','主意','灵感','建议']):
             matched.append('idea')
-        if any(kw in content for kw in ['问题','疑问','不清楚','是否','能不能','可以吗']):
+        elif any(kw in content for kw in ['问题','疑问','不清楚','是否','能不能','可以吗']):
             matched.append('question')
         else:
             matched.append('reference')
     return matched[:2] if matched else ['idea']
 
-def analyze_work(content, tags):
-    """工作类四维评分分析"""
-    scores = {'feasibility': 3, 'priority': 3, 'urgency': 3, 'risk': 3}
-    # 可行性
-    if any(kw in content for kw in ['已具备','已有','现有','成熟','有方案','可参考']):
-        scores['feasibility'] = 5
-    elif any(kw in content for kw in ['需要调研','需研究','探索','创新','新方案']):
-        scores['feasibility'] = 2
-    elif any(kw in content for kw in ['难度大','很困难','未知','挑战']):
-        scores['feasibility'] = 1
-    # 优先级
-    high_priority = ['关键','重要','紧急','核心','瓶颈','必须','立刻','马上']
-    low_priority = ['后期','以后','有空','optional','可有可无']
-    if any(kw in content for kw in high_priority):
-        scores['priority'] = 5
-    elif any(kw in content for kw in low_priority):
-        scores['priority'] = 1
-    # 紧迫性
-    urgent = ['今天','明天','本周','截止','deadline','马上','立刻','紧急']
-    if any(kw in content for kw in urgent):
-        scores['urgency'] = 5
-    # 风险性
-    if any(kw in content for kw in ['风险','隐患','问题','故障','失效','泄漏','爆炸']):
-        scores['risk'] = 5
-    elif any(kw in content for kw in ['关注','注意','监控','小心']):
-        scores['risk'] = 3
-    return scores
+def make_decision(domain, content):
+    """根据内容关键词做决策（简化版，不再依赖评分）"""
+    urgent = any(kw in content for kw in ['今天','明天','立即','马上','紧急','必须','deadline','截止','到期'])
+    actionable = any(kw in content for kw in ['做','处理','完成','提交','安排','联系','确认','跟进','推进','解决'])
 
-def analyze_life(content):
-    """生活类简化决策"""
-    urgency = 1
-    feasibility = 3
-    if any(kw in content for kw in ['今天','明天','到期','截止','缴费','预约','deadline']):
-        urgency = 5
-    elif any(kw in content for kw in ['本周','下周','最近']):
-        urgency = 3
-    if any(kw in content for kw in ['可以','能做','简单','容易','已经']):
-        feasibility = 5
-    elif any(kw in content for kw in ['想','希望','打算','有空']):
-        feasibility = 3
-    return {'feasibility': feasibility, 'priority': urgency, 'urgency': urgency, 'risk': 1}
-
-def make_decision(domain, scores, tags):
-    """根据评分做出待办决策"""
     if domain == 'work':
-        if scores['feasibility'] >= 3 and (scores['priority'] >= 4 or scores['urgency'] >= 4):
+        if urgent or actionable:
             return 'todo-work', '建议加入工作待办，尽快落实'
-        elif scores['feasibility'] >= 3:
+        else:
             return 'stash', '暂存灵感库，待时机成熟再评估'
-        else:
-            return 'archive', '归档参考，待条件具备后再回看'
     elif domain == 'life':
-        if scores['urgency'] >= 3 or scores['feasibility'] >= 4:
+        if urgent or actionable:
             return 'todo-life', '建议加入生活待办，安排时间处理'
-        elif '感悟' in str(tags) or 'daily-thought' in tags:
-            return 'stash', '暂存灵感库，日后再回味'
         else:
-            return 'archive', '归档参考'
+            return 'stash', '暂存灵感库，日后再回味'
     else:
-        return 'archive', '归档参考'
+        return 'stash', '暂存，待评估后决定'
 
 def generate_suggestion(domain, decision, content):
     """生成行动建议"""
     if decision == 'todo-work':
-        return f"建议本周内制定{content[:20]}的具体执行计划，明确责任人和时间节点"
+        return f"建议尽快制定具体执行计划，明确责任人和时间节点"
     elif decision == 'todo-life':
         return f"建议尽快安排时间处理，避免遗忘"
     elif decision == 'stash':
@@ -219,24 +172,18 @@ def generate_suggestion(domain, decision, content):
         return "已归档，作为参考资料保留"
 
 def process_idea(content):
-    """完整处理一条灵感：判断领域 → 推荐标签 → 评分 → 决策"""
+    """完整处理一条灵感：判断领域 → 推荐标签 → 决策（无评分）"""
     domain = detect_domain(content)
     tags = suggest_tags(content, domain)
-    if domain == 'work':
-        scores = analyze_work(content, tags)
-    elif domain == 'life':
-        scores = analyze_life(content)
-    else:
-        scores = {'feasibility': 2, 'priority': 1, 'urgency': 1, 'risk': 1}
-    decision, reason = make_decision(domain, scores, tags)
+    decision, reason = make_decision(domain, content)
     suggestion = generate_suggestion(domain, decision, content)
     return {
         'domain': domain,
         'tags': ','.join(tags),
-        'feasibility': scores['feasibility'],
-        'priority': scores['priority'],
-        'urgency': scores['urgency'],
-        'risk': scores['risk'],
+        'feasibility': 0,
+        'priority': 0,
+        'urgency': 0,
+        'risk': 0,
         'decision': decision,
         'suggestion': suggestion
     }

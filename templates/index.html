@@ -14,9 +14,9 @@
   --brand: #7c3aed; --brand-light: #a78bfa; --brand-dark: #5b21b6;
   --bg: #f8f9fc; --surface: #ffffff; --ink: #1a2332; --muted: #6b7a8e;
   --border: #e5e8f0; --shadow: 0 1px 3px rgba(0,0,0,.08);
+  --green: #10b981; --orange: #f59e0b; --red: #ef4444;
   --radius: 10px; --radius-lg: 16px;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --nav-height: 64px; --input-height: 64px;
   --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -25,121 +25,149 @@ body{font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-
 
 /* ====== App Shell ====== */
 .app{display:flex;flex-direction:column;height:100%;max-width:480px;margin:0 auto;position:relative;}
-.app-header{flex-shrink:0;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;z-index:10;}
-.app-header h1{font-size:18px;font-weight:700;display:flex;align-items:center;gap:8px;}
-.app-header h1 .dot{width:8px;height:8px;border-radius:50%;background:#10b981;display:inline-block;animation:pulse 2s infinite;}
+.app-header{flex-shrink:0;padding:8px 12px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px;z-index:10;}
+.app-header h1{font-size:16px;font-weight:700;white-space:nowrap;}
+.app-header h1 .dot{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;margin-right:4px;animation:pulse 2s infinite;}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.header-actions{display:flex;gap:8px;}
-.header-btn{width:36px;height:36px;border-radius:50%;border:none;background:var(--bg);color:var(--muted);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;}
-.header-btn:active{transform:scale(.92);background:var(--border);}
+.header-actions{display:flex;gap:6px;align-items:center;}
+.header-btn{width:32px;height:32px;border-radius:50%;border:none;background:var(--bg);color:var(--muted);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+
+/* ====== Global Search Bar ====== */
+.search-bar{flex-shrink:0;padding:8px 12px;background:var(--surface);display:flex;gap:6px;align-items:center;}
+.search-bar input{flex:1;border:1px solid var(--border);border-radius:999px;padding:7px 14px;font-size:13px;font-family:var(--font);outline:none;background:var(--bg);color:var(--ink);}
+.search-bar input:focus{border-color:var(--brand-light);}
+.search-bar .search-date{width:100px;border:1px solid var(--border);border-radius:999px;padding:7px 8px;font-size:12px;font-family:var(--font);outline:none;background:var(--bg);color:var(--ink);}
+.search-bar .search-btn{width:32px;height:32px;border-radius:50%;border:none;background:var(--brand);color:#fff;font-size:14px;cursor:pointer;flex-shrink:0;}
 
 /* ====== Tabs ====== */
-.tab-bar{flex-shrink:0;display:flex;background:var(--surface);border-bottom:1px solid var(--border);padding:0 8px;overflow-x:auto;scrollbar-width:none;}
+.tab-bar{flex-shrink:0;display:flex;background:var(--surface);border-bottom:1px solid var(--border);padding:0 4px;overflow-x:auto;scrollbar-width:none;}
 .tab-bar::-webkit-scrollbar{display:none;}
-.tab-btn{flex-shrink:0;padding:10px 14px;font-size:13px;font-weight:500;color:var(--muted);border:none;background:none;cursor:pointer;position:relative;transition:color .2s;white-space:nowrap;}
+.tab-btn{flex-shrink:0;padding:10px 11px;font-size:12px;font-weight:500;color:var(--muted);border:none;background:none;cursor:pointer;position:relative;transition:color .2s;white-space:nowrap;}
 .tab-btn.active{color:var(--brand);}
-.tab-btn.active::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:20px;height:3px;border-radius:2px;background:var(--brand);}
-.tab-btn .count{display:inline-block;margin-left:4px;font-size:11px;background:var(--bg);padding:1px 6px;border-radius:8px;color:var(--muted);}
+.tab-btn.active::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:18px;height:3px;border-radius:2px;background:var(--brand);}
+.tab-btn .count{display:inline-block;margin-left:3px;font-size:10px;background:var(--bg);padding:1px 5px;border-radius:8px;color:var(--muted);}
 .tab-btn.active .count{background:#ede9fe;color:var(--brand);}
 
 /* ====== Content Area ====== */
-.content-area{flex:1;overflow-y:auto;overflow-x:hidden;padding:8px 12px 4px;scroll-behavior:smooth;}
+.content-area{flex:1;overflow-y:auto;overflow-x:hidden;padding:6px 10px 4px;scroll-behavior:smooth;}
 .content-area::-webkit-scrollbar{width:4px;}
 .content-area::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 
 /* ====== Idea Cards ====== */
-.idea-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:10px;box-shadow:var(--shadow);transition:transform .15s,box-shadow .15s;cursor:pointer;position:relative;}
-.idea-card:active{transform:scale(.98);box-shadow:0 1px 2px rgba(0,0,0,.05);}
-.idea-card .card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px;}
-.idea-card .card-id{font-size:11px;color:var(--muted);font-weight:500;}
-.idea-card .card-time{font-size:11px;color:var(--muted);white-space:nowrap;}
-.idea-card .card-content{font-size:14px;line-height:1.6;margin-bottom:10px;word-break:break-word;}
-.idea-card .card-bottom{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
-.idea-card .tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--bg);color:var(--muted);border:1px solid var(--border);}
+.idea-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:8px;box-shadow:var(--shadow);transition:transform .15s;cursor:pointer;position:relative;}
+.idea-card:active{transform:scale(.98);}
+.idea-card .card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:4px;}
+.idea-card .card-id{font-size:10px;color:var(--muted);font-weight:500;}
+.idea-card .card-time{font-size:10px;color:var(--muted);white-space:nowrap;}
+.idea-card .card-content{font-size:14px;line-height:1.6;margin-bottom:8px;word-break:break-word;}
+.idea-card .card-bottom{display:flex;flex-wrap:wrap;gap:4px;align-items:center;}
+.idea-card .tag{display:inline-block;font-size:10px;padding:2px 7px;border-radius:999px;background:var(--bg);color:var(--muted);border:1px solid var(--border);}
 .idea-card .tag.work{background:#ede9fe;color:var(--brand);border-color:var(--brand-light);}
-.idea-card .tag.life{background:#fef3c7;color:#92400e;border-color:#f59e0b;}
-.idea-card .tag.todo{background:#fef3c7;color:#92400e;border-color:#f59e0b;}
+.idea-card .tag.life{background:#fef3c7;color:#92400e;border-color:var(--orange);}
+.idea-card .tag.todo{background:#fef3c7;color:#92400e;border-color:var(--orange);}
 .idea-card .tag.tag-clickable{cursor:pointer;transition:transform .15s;}
 .idea-card .tag.tag-clickable:active{transform:scale(.92);}
-.idea-card .card-actions{position:absolute;top:8px;right:8px;opacity:0;transition:opacity .2s;}
-.idea-card:hover .card-actions,.idea-card:active .card-actions{opacity:1;}
-.idea-card .card-actions button{width:28px;height:28px;border:none;border-radius:50%;background:var(--bg);color:var(--muted);font-size:14px;cursor:pointer;}
 
 /* ====== Empty State ====== */
-.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;text-align:center;color:var(--muted);}
-.empty-state .icon{font-size:48px;margin-bottom:16px;opacity:.5;}
-.empty-state h3{font-size:16px;font-weight:600;margin-bottom:8px;color:var(--ink);}
-.empty-state p{font-size:13px;line-height:1.5;}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:50px 20px;text-align:center;color:var(--muted);}
+.empty-state .icon{font-size:40px;margin-bottom:12px;opacity:.5;}
+.empty-state h3{font-size:15px;font-weight:600;margin-bottom:6px;color:var(--ink);}
+.empty-state p{font-size:12px;line-height:1.5;}
 
 /* ====== Input Area ====== */
-.input-area{flex-shrink:0;padding:8px 12px;padding-bottom:calc(8px + var(--safe-bottom));background:var(--surface);border-top:1px solid var(--border);}
-.input-row{display:flex;gap:8px;align-items:flex-end;}
-.input-row textarea{flex:1;border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;font-size:14px;font-family:var(--font);line-height:1.5;resize:none;min-height:42px;max-height:120px;outline:none;transition:border-color .2s;background:var(--bg);color:var(--ink);}
+.input-area{flex-shrink:0;padding:6px 10px;padding-bottom:calc(6px + var(--safe-bottom));background:var(--surface);border-top:1px solid var(--border);}
+.input-row{display:flex;gap:6px;align-items:flex-end;}
+.input-row textarea{flex:1;border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;font-size:14px;font-family:var(--font);line-height:1.5;resize:none;min-height:38px;max-height:100px;outline:none;transition:border-color .2s;background:var(--bg);color:var(--ink);}
 .input-row textarea:focus{border-color:var(--brand-light);}
-.input-row .send-btn{width:42px;height:42px;border-radius:50%;border:none;background:var(--brand);color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;}
+.input-row .send-btn{width:38px;height:38px;border-radius:50%;border:none;background:var(--brand);color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;}
 .input-row .send-btn:active{transform:scale(.9);background:var(--brand-dark);}
 .input-row .send-btn:disabled{opacity:.4;cursor:not-allowed;}
 
 /* ====== Detail Modal ====== */
 .modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);z-index:100;display:none;animation:fadeIn .2s;}
 .modal-overlay.show{display:block;}
-.modal-sheet{position:fixed;bottom:0;left:50%;transform:translateX(-50%) translateY(100%);width:100%;max-width:480px;max-height:85vh;background:var(--surface);border-radius:var(--radius-lg) var(--radius-lg) 0 0;z-index:101;overflow-y:auto;transition:transform .3s cubic-bezier(.32,.72,0,1);padding:16px 20px;padding-bottom:calc(16px + var(--safe-bottom));}
+.modal-sheet{position:fixed;bottom:0;left:50%;transform:translateX(-50%) translateY(100%);width:100%;max-width:480px;max-height:85vh;background:var(--surface);border-radius:var(--radius-lg) var(--radius-lg) 0 0;z-index:101;overflow-y:auto;transition:transform .3s cubic-bezier(.32,.72,0,1);padding:14px 18px;padding-bottom:calc(14px + var(--safe-bottom));}
 .modal-sheet.show{transform:translateX(-50%) translateY(0);}
-.modal-sheet .handle{width:36px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 12px;}
-.modal-sheet .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
-.modal-sheet .modal-header h2{font-size:16px;font-weight:700;}
-.modal-sheet .close-btn{width:32px;height:32px;border:none;border-radius:50%;background:var(--bg);color:var(--muted);font-size:16px;cursor:pointer;}
-.modal-section{margin-bottom:12px;}
+.modal-sheet .handle{width:36px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 10px;}
+.modal-sheet .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.modal-sheet .modal-header h2{font-size:15px;font-weight:700;}
+.modal-sheet .close-btn{width:30px;height:30px;border:none;border-radius:50%;background:var(--bg);color:var(--muted);font-size:16px;cursor:pointer;}
+.modal-section{margin-bottom:10px;}
 .modal-section .label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
 .modal-section .value{font-size:14px;line-height:1.6;}
-.modal-section .score-row{display:flex;gap:8px;flex-wrap:wrap;}
-.modal-section .score-item{display:flex;flex-direction:column;align-items:center;background:var(--bg);border-radius:var(--radius);padding:8px 12px;min-width:56px;}
-.modal-section .score-item .num{font-size:18px;font-weight:700;color:var(--brand);}
-.modal-section .score-item .lbl{font-size:10px;color:var(--muted);}
-.modal-section .search-result{background:var(--bg);border-radius:var(--radius);padding:10px 12px;margin-bottom:6px;}
+.modal-section .search-result{background:var(--bg);border-radius:var(--radius);padding:8px 10px;margin-bottom:6px;}
 .modal-section .search-result .s-title{font-size:13px;font-weight:600;margin-bottom:2px;}
 .modal-section .search-result .s-title a{color:var(--brand);text-decoration:none;}
 .modal-section .search-result .s-snippet{font-size:12px;color:var(--muted);line-height:1.5;}
-.modal-actions{display:flex;gap:8px;margin-top:4px;}
-.modal-actions button{flex:1;padding:10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;color:var(--ink);}
-.modal-actions button:active{transform:scale(.97);background:var(--bg);}
+.modal-actions{display:flex;gap:6px;margin-top:4px;}
+.modal-actions button{flex:1;padding:9px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;color:var(--ink);}
+.modal-actions button:active{transform:scale(.97);}
 .modal-actions button.primary{background:var(--brand);color:#fff;border-color:var(--brand);}
 
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 
+/* ====== Domain Selector ====== */
+.domain-selector{display:flex;gap:4px;margin-top:4px;}
+.domain-selector .domain-btn{flex:1;padding:5px 6px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);font-size:11px;font-weight:500;cursor:pointer;transition:all .15s;text-align:center;color:var(--muted);}
+.domain-selector .domain-btn:active{transform:scale(.95);}
+.domain-selector .domain-btn.selected{color:#fff;border-color:transparent;}
+.domain-selector .domain-btn.selected.work{background:var(--brand);}
+.domain-selector .domain-btn.selected.life{background:var(--orange);}
+.domain-selector .domain-btn.selected.process{background:#06b6d4;}
+.domain-selector .domain-btn.selected.other{background:var(--green);}
+
+/* ====== Reminder ====== */
+.reminder-row{display:flex;gap:6px;align-items:center;margin-top:8px;}
+.reminder-row input[type="datetime-local"]{flex:1;border:1px solid var(--border);border-radius:var(--radius);padding:7px 8px;font-size:12px;font-family:var(--font);outline:none;background:var(--bg);color:var(--ink);}
+.reminder-row .remind-btn{padding:7px 12px;border:none;border-radius:var(--radius);background:var(--brand);color:#fff;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;}
+.reminder-row .remind-btn:disabled{opacity:.4;}
+
+/* ====== Todo Card ====== */
+.todo-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px;transition:all .2s;}
+.todo-card.completed{opacity:.5;background:var(--bg);}
+.todo-card .todo-check{width:22px;height:22px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+.todo-card .todo-check:hover{border-color:var(--green);}
+.todo-card.done .todo-check{background:var(--green);border-color:var(--green);}
+.todo-card .todo-check::after{content:'✓';color:#fff;font-size:12px;display:none;}
+.todo-card.done .todo-check::after{display:block;}
+.todo-card .todo-body{flex:1;min-width:0;}
+.todo-card .todo-content{font-size:14px;line-height:1.5;word-break:break-word;}
+.todo-card .todo-time{font-size:11px;color:var(--muted);margin-top:2px;}
+.todo-card .todo-domain{font-size:10px;padding:1px 6px;border-radius:999px;display:inline-block;margin-top:2px;}
+.todo-card .todo-domain.work{background:#ede9fe;color:var(--brand);}
+.todo-card .todo-domain.life{background:#fef3c7;color:#92400e;}
+.todo-card .todo-overdue{color:var(--red);font-weight:600;}
+
+/* ====== Memory Card ====== */
+.memory-section{margin-bottom:8px;}
+.memory-section .mem-label{font-size:12px;font-weight:600;color:var(--brand);margin-bottom:6px;padding:4px 0;}
+.memory-card{background:var(--surface);border:1px solid var(--brand-light);border-radius:var(--radius);padding:10px 12px;margin-bottom:6px;box-shadow:var(--shadow);}
+.memory-card .mem-date{font-size:11px;color:var(--muted);margin-bottom:4px;}
+.memory-card .mem-content{font-size:13px;line-height:1.5;}
+
 /* ====== Bell Badge ====== */
-.bell-badge{position:absolute;top:-2px;right:-4px;min-width:18px;height:18px;border-radius:9px;background:#ef4444;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid var(--surface);animation:bellPop .3s;}
-@keyframes bellPop{0%{transform:scale(0)}50%{transform:scale(1.2)}100%{transform:scale(1)}}
+.bell-badge{position:absolute;top:-2px;right:-4px;min-width:16px;height:16px;border-radius:8px;background:var(--red);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px;border:2px solid var(--surface);}
 
 /* ====== Notification Panel ====== */
-.notif-panel{position:fixed;bottom:0;left:50%;transform:translateX(-50%) translateY(100%);width:100%;max-width:480px;max-height:70vh;background:var(--surface);border-radius:var(--radius-lg) var(--radius-lg) 0 0;z-index:101;overflow-y:auto;transition:transform .3s cubic-bezier(.32,.72,0,1);padding:16px 20px;padding-bottom:calc(16px + var(--safe-bottom));}
+.notif-panel{position:fixed;bottom:0;left:50%;transform:translateX(-50%) translateY(100%);width:100%;max-width:480px;max-height:70vh;background:var(--surface);border-radius:var(--radius-lg) var(--radius-lg) 0 0;z-index:101;overflow-y:auto;transition:transform .3s cubic-bezier(.32,.72,0,1);padding:14px 18px;padding-bottom:calc(14px + var(--safe-bottom));}
 .notif-panel.show{transform:translateX(-50%) translateY(0);}
-.notif-panel .handle{width:36px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 12px;}
-.notif-item{display:flex;align-items:flex-start;gap:10px;padding:12px 0;border-bottom:1px solid var(--border);}
-.notif-item:last-child{border-bottom:none;}
-.notif-item .n-icon{width:32px;height:32px;border-radius:50%;background:#fef3c7;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.notif-panel .handle{width:36px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 10px;}
+.notif-item{display:flex;align-items:flex-start;gap:8px;padding:10px 0;border-bottom:1px solid var(--border);}
+.notif-item .n-icon{width:28px;height:28px;border-radius:50%;background:#fef3c7;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
 .notif-item .n-body{flex:1;min-width:0;}
-.notif-item .n-title{font-size:13px;font-weight:600;margin-bottom:2px;}
-.notif-item .n-time{font-size:11px;color:var(--muted);margin-bottom:4px;}
-.notif-item .n-msg{font-size:12px;color:var(--ink);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.notif-item .n-title{font-size:12px;font-weight:600;margin-bottom:2px;}
+.notif-item .n-time{font-size:10px;color:var(--muted);margin-bottom:2px;}
+.notif-item .n-msg{font-size:12px;color:var(--ink);line-height:1.5;}
 .notif-item .n-action{flex-shrink:0;}
-.notif-item .n-action button{width:28px;height:28px;border:none;border-radius:50%;background:var(--bg);color:var(--muted);font-size:14px;cursor:pointer;}
-
-/* ====== Reminder Picker ====== */
-.reminder-row{display:flex;gap:8px;align-items:center;margin-top:8px;}
-.reminder-row input[type="datetime-local"]{flex:1;border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;font-size:13px;font-family:var(--font);outline:none;background:var(--bg);color:var(--ink);}
-.reminder-row input[type="datetime-local"]:focus{border-color:var(--brand-light);}
-.reminder-row .remind-btn{padding:8px 14px;border:none;border-radius:var(--radius);background:var(--brand);color:#fff;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;}
-.reminder-row .remind-btn:active{transform:scale(.95);}
-.reminder-row .remind-btn:disabled{opacity:.4;cursor:not-allowed;}
+.notif-item .n-action button{width:24px;height:24px;border:none;border-radius:50%;background:var(--bg);color:var(--muted);font-size:12px;cursor:pointer;}
 
 /* ====== Toast ====== */
 .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 20px;border-radius:var(--radius);font-size:13px;font-weight:500;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;max-width:400px;text-align:center;}
 .toast.show{opacity:1;}
 
-/* ====== Stats Badge ====== */
-.stats-chip{display:flex;gap:4px;flex-wrap:wrap;padding:8px 0;}
-.stats-chip .chip{font-size:11px;padding:4px 10px;border-radius:999px;background:var(--bg);border:1px solid var(--border);color:var(--muted);}
+/* ====== Stats ====== */
+.stats-chip{display:flex;gap:4px;flex-wrap:wrap;padding:6px 0;}
+.stats-chip .chip{font-size:10px;padding:3px 8px;border-radius:999px;background:var(--bg);border:1px solid var(--border);color:var(--muted);}
 .stats-chip .chip strong{color:var(--ink);}
 
 /* ====== Loading ====== */
@@ -149,39 +177,23 @@ body{font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-
 .loading-dots span:nth-child(3){animation-delay:.4s;}
 @keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-8px)}}
 
-/* ====== Domain Selector ====== */
-.domain-selector{display:flex;gap:6px;margin-top:4px;}
-.domain-selector .domain-btn{flex:1;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;text-align:center;color:var(--muted);}
-.domain-selector .domain-btn:active{transform:scale(.95);}
-.domain-selector .domain-btn.selected{color:#fff;border-color:transparent;}
-.domain-selector .domain-btn.selected.work{background:var(--brand);}
-.domain-selector .domain-btn.selected.life{background:#f59e0b;}
-.domain-selector .domain-btn.selected.process{background:#06b6d4;}
-.domain-selector .domain-btn.selected.other{background:#10b981;}
-
-/* ====== Search tab ====== */
-.search-box{display:flex;gap:8px;margin-bottom:10px;}
-.search-box input{flex:1;border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;font-size:14px;font-family:var(--font);outline:none;background:var(--surface);}
-.search-box input:focus{border-color:var(--brand-light);}
-.search-box button{padding:10px 16px;border:none;border-radius:var(--radius);background:var(--brand);color:#fff;font-size:13px;font-weight:500;cursor:pointer;}
+/* ====== Search Results ====== */
+.search-results .search-header{font-size:12px;color:var(--muted);padding:6px 0;}
 
 /* ====== Review Card ====== */
-.review-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:10px;box-shadow:var(--shadow);cursor:pointer;transition:all .15s;}
+.review-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:8px;box-shadow:var(--shadow);cursor:pointer;transition:all .15s;}
 .review-card:active{transform:scale(.98);}
-.review-card .review-date{font-size:12px;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
-.review-card .review-date .date-badge{background:#ede9fe;color:var(--brand);padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;}
-.review-card .review-section{margin-bottom:10px;margin-top:10px;border-top:1px solid var(--border);padding-top:10px;}
-.review-card .review-section .rs-label{font-size:12px;font-weight:600;color:var(--brand);margin-bottom:4px;}
-.review-card .review-section .rs-content{font-size:13px;line-height:1.7;color:var(--ink);white-space:pre-wrap;}
-
-.review-input-area{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px;margin-bottom:12px;}
-.review-input-area textarea{width:100%;border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;font-size:14px;font-family:var(--font);line-height:1.6;resize:vertical;min-height:80px;max-height:200px;outline:none;background:var(--bg);color:var(--ink);margin-bottom:8px;}
+.review-card .review-date{font-size:11px;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+.review-card .review-date .date-badge{background:#ede9fe;color:var(--brand);padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;}
+.review-card .review-section{margin-bottom:8px;margin-top:8px;border-top:1px solid var(--border);padding-top:8px;}
+.review-card .review-section .rs-label{font-size:11px;font-weight:600;color:var(--brand);margin-bottom:3px;}
+.review-card .review-section .rs-content{font-size:13px;line-height:1.6;color:var(--ink);white-space:pre-wrap;}
+.review-input-area{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px;margin-bottom:10px;}
+.review-input-area textarea{width:100%;border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;font-size:14px;font-family:var(--font);line-height:1.6;resize:vertical;min-height:70px;max-height:180px;outline:none;background:var(--bg);color:var(--ink);margin-bottom:6px;}
 .review-input-area textarea:focus{border-color:var(--brand-light);}
-.review-submit-btn{width:100%;padding:10px;border:none;border-radius:var(--radius);background:var(--brand);color:#fff;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;}
+.review-submit-btn{width:100%;padding:9px;border:none;border-radius:var(--radius);background:var(--brand);color:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;}
 .review-submit-btn:active{transform:scale(.97);}
-.review-submit-btn:disabled{opacity:.4;cursor:not-allowed;}
-.review-submit-btn .spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;margin-right:6px;vertical-align:middle;}
-@keyframes spin{to{transform:rotate(360deg)}}
+.review-submit-btn:disabled{opacity:.4;}
 
 /* ====== Responsive ====== */
 @media (min-width:480px){
@@ -191,31 +203,36 @@ body{font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-
 </head>
 <body>
 <div class="app" id="app">
-  <!-- Header -->
   <header class="app-header">
-    <h1><span class="dot"></span> 灵感管家</h1>
+    <h1><span class="dot"></span>灵感管家</h1>
     <div class="header-actions">
       <button class="header-btn" id="bellBtn" onclick="toggleNotificationPanel()" title="通知" style="position:relative;">
-        🔔
-        <span class="bell-badge" id="bellBadge" style="display:none;">0</span>
+        🔔<span class="bell-badge" id="bellBadge" style="display:none;">0</span>
       </button>
       <button class="header-btn" onclick="refreshCurrent()" title="刷新">↻</button>
     </div>
   </header>
+
+  <!-- Global Search -->
+  <div class="search-bar">
+    <input type="text" id="globalSearchInput" placeholder="搜索灵感…" onkeydown="if(event.key==='Enter')doGlobalSearch()">
+    <input type="date" class="search-date" id="globalSearchDate" title="按日期搜索" onchange="doGlobalSearch()">
+    <button class="search-btn" onclick="doGlobalSearch()">🔍</button>
+  </div>
 
   <!-- Tab Bar -->
   <nav class="tab-bar" id="tabBar">
     <button class="tab-btn active" data-tab="all" onclick="switchTab('all')">全部</button>
     <button class="tab-btn" data-tab="work" onclick="switchTab('work')">🔧 工作 <span class="count" id="countWork">0</span></button>
     <button class="tab-btn" data-tab="life" onclick="switchTab('life')">🌱 生活 <span class="count" id="countLife">0</span></button>
-    <button class="tab-btn" data-tab="todo" onclick="switchTab('todo')">✅ 待办 <span class="count" id="countTodo">0</span></button>
+    <button class="tab-btn" data-tab="todo-list" onclick="switchTab('todo-list')">✅ 今日待办 <span class="count" id="countTodo">0</span></button>
     <button class="tab-btn" data-tab="review" onclick="switchTab('review')">📋 复盘</button>
-    <button class="tab-btn" data-tab="search" onclick="switchTab('search')">🔍 搜索</button>
   </nav>
 
   <!-- Content -->
   <div class="content-area" id="contentArea">
     <div class="stats-chip" id="statsChip"></div>
+    <div id="memorySection"></div>
     <div id="ideaList"></div>
   </div>
 
@@ -247,13 +264,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-
     <h2>🔔 通知提醒</h2>
     <button class="close-btn" onclick="closeNotificationPanel()">✕</button>
   </div>
-  <div id="notifBody">
-    <div class="empty-state" style="padding:30px 20px;">
-      <div class="icon">🔔</div>
-      <h3>暂无通知</h3>
-      <p>待办事项的提醒会在这里显示</p>
-    </div>
-  </div>
+  <div id="notifBody"></div>
 </div>
 
 <!-- Toast -->
@@ -263,22 +274,17 @@ body{font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-
 // ====== State ======
 let allIdeas = [];
 let currentTab = 'all';
-let isLoading = false;
+let todoItems = [];
 let notifInterval = null;
-let lastNotifCount = 0;
 
-// ====== Auto Resize Textarea ======
+// ====== Auto Resize ======
 function autoResize(el) {
   el.style.height = 'auto';
-  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
 }
 
-// ====== Enter to Send ======
 document.getElementById('ideaInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    submitIdea();
-  }
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitIdea(); }
 });
 
 // ====== Toast ======
@@ -289,19 +295,14 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2500);
 }
 
-// ====== Loading ======
-function showLoading() {
-  document.getElementById('ideaList').innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
-}
-
 // ====== Tab Switching ======
 function switchTab(tab) {
   currentTab = tab;
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   if (tab === 'review') {
     renderReview();
-  } else if (tab === 'search') {
-    renderSearch();
+  } else if (tab === 'todo-list') {
+    fetchTodos();
   } else {
     fetchIdeas();
   }
@@ -313,18 +314,16 @@ async function fetchIdeas() {
     const params = new URLSearchParams();
     if (currentTab === 'work') params.set('domain', 'work');
     else if (currentTab === 'life') params.set('domain', 'life');
-    else if (currentTab === 'todo') params.set('decision__in', 'todo-work,todo-life');
+    else if (currentTab === 'todo-list') params.set('decision__in', 'todo-work,todo-life');
     const resp = await fetch('/api/ideas?' + params.toString());
     const data = await resp.json();
     allIdeas = data.ideas || [];
     renderStats(data.stats);
     renderIdeas();
-  } catch(e) {
-    showToast('加载失败，请检查网络');
-  }
+    if (currentTab === 'all') fetchMemories();
+  } catch(e) { showToast('加载失败，请检查网络'); }
 }
 
-// ====== Render Stats ======
 function renderStats(stats) {
   if (!stats) return;
   const chip = document.getElementById('statsChip');
@@ -332,228 +331,134 @@ function renderStats(stats) {
     <span class="chip">📋 共 <strong>${stats.total||0}</strong> 条</span>
     <span class="chip">🔧 <strong>${stats.work||0}</strong></span>
     <span class="chip">🌱 <strong>${stats.life||0}</strong></span>
-    <span class="chip">✅ 待办 <strong>${(stats.todo_work||0)+(stats.todo_life||0)}</strong></span>
-  `;
-  // Update tab bar counts
+    <span class="chip">✅ 待办 <strong>${(stats.todo_work||0)+(stats.todo_life||0)}</strong></span>`;
   document.getElementById('countWork').textContent = stats.work||0;
   document.getElementById('countLife').textContent = stats.life||0;
   document.getElementById('countTodo').textContent = (stats.todo_work||0)+(stats.todo_life||0);
 }
 
-// ====== Render Ideas ======
 function renderIdeas() {
   const container = document.getElementById('ideaList');
-  if (currentTab === 'search' || currentTab === 'review') return;
+  if (currentTab === 'todo-list' || currentTab === 'review') return;
   let ideas = allIdeas;
-  if (currentTab === 'work') {
-    ideas = allIdeas.filter(i => i.domain === 'work');
-  } else if (currentTab === 'life') {
-    ideas = allIdeas.filter(i => i.domain === 'life');
-  } else if (currentTab === 'todo') {
-    ideas = allIdeas.filter(i => i.decision && i.decision.startsWith('todo'));
-  }
+  if (currentTab === 'work') ideas = allIdeas.filter(i => i.domain === 'work');
+  else if (currentTab === 'life') ideas = allIdeas.filter(i => i.domain === 'life');
 
   if (!ideas.length) {
-    container.innerHTML = `
-      <div class="empty-state">
-        <div class="icon">💡</div>
-        <h3>还没有灵感</h3>
-        <p>在下方输入你的想法，<br>Agent 会自动归类分析</p>
-      </div>`;
+    container.innerHTML = `<div class="empty-state"><div class="icon">💡</div><h3>还没有灵感</h3><p>在下方输入你的想法，Agent 会自动归类</p></div>`;
     return;
   }
-
   container.innerHTML = ideas.map(idea => `
     <div class="idea-card" onclick="openIdea(${idea.id})">
-      <div class="card-top">
-        <span class="card-id">#${idea.id}</span>
-        <span class="card-time">${idea.created_at || ''}</span>
-      </div>
+      <div class="card-top"><span class="card-id">#${idea.id}</span><span class="card-time">${idea.created_at || ''}</span></div>
       <div class="card-content">${escapeHtml(idea.content)}</div>
-      <div class="card-bottom">
-        ${getCardTagHtml(idea)}
-      </div>
-    </div>
-  `).join('');
+      <div class="card-bottom">${getCardTagHtml(idea)}</div>
+    </div>`).join('');
 }
 
-// ====== Render Search ======
-function renderSearch() {
+// ====== Historical Memories ======
+async function fetchMemories() {
+  const section = document.getElementById('memorySection');
+  try {
+    const resp = await fetch('/api/memories');
+    const data = await resp.json();
+    let html = '';
+    if (data.last_month && data.last_month.length > 0) {
+      html += `<div class="memory-section"><div class="mem-label">📅 上个月今日</div>`;
+      html += data.last_month.map(i => `<div class="memory-card" onclick="openIdea(${i.id})"><div class="mem-date">${i.created_at||''}</div><div class="mem-content">${escapeHtml(i.content)}</div></div>`).join('');
+      html += `</div>`;
+    }
+    if (data.last_year && data.last_year.length > 0) {
+      html += `<div class="memory-section"><div class="mem-label">🕰️ 去年今日</div>`;
+      html += data.last_year.map(i => `<div class="memory-card" onclick="openIdea(${i.id})"><div class="mem-date">${i.created_at||''}</div><div class="mem-content">${escapeHtml(i.content)}</div></div>`).join('');
+      html += `</div>`;
+    }
+    section.innerHTML = html;
+  } catch(e) { section.innerHTML = ''; }
+}
+
+// ====== Global Search ======
+async function doGlobalSearch() {
+  const input = document.getElementById('globalSearchInput');
+  const dateInput = document.getElementById('globalSearchDate');
+  const keyword = input.value.trim();
+  const dateVal = dateInput.value;
+  if (!keyword && !dateVal) { showToast('请输入关键词或选择日期'); return; }
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  currentTab = 'search';
   const container = document.getElementById('ideaList');
-  container.innerHTML = `
-    <div class="search-box">
-      <input type="text" id="searchInput" placeholder="输入搜索关键词…" onkeydown="if(event.key==='Enter')doSearch()">
-      <button onclick="doSearch()">搜索</button>
-    </div>
-    <div class="search-box" style="gap:4px;flex-wrap:wrap;">
-      <button style="font-size:12px;padding:6px 12px;background:var(--bg);color:var(--ink);border:1px solid var(--border);border-radius:999px;cursor:pointer;" onclick="quickSearch('氢内燃机 台架试验 标准')">氢内燃机标准</button>
-      <button style="font-size:12px;padding:6px 12px;background:var(--bg);color:var(--ink);border:1px solid var(--border);border-radius:999px;cursor:pointer;" onclick="quickSearch('水平对置发动机 技术')">水平对置技术</button>
-      <button style="font-size:12px;padding:6px 12px;background:var(--bg);color:var(--ink);border:1px solid var(--border);border-radius:999px;cursor:pointer;" onclick="quickSearch('航空发动机 适航认证')">适航认证</button>
-    </div>
-    <div id="searchResults"></div>
-  `;
-}
-
-// ====== Search ======
-async function doSearch() {
-  const query = document.getElementById('searchInput')?.value?.trim();
-  if (!query) return;
-  const container = document.getElementById('searchResults');
+  document.getElementById('memorySection').innerHTML = '';
   container.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
   try {
-    const resp = await fetch('/api/search', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({query})
-    });
+    const params = new URLSearchParams();
+    if (keyword) params.set('keyword', keyword);
+    if (dateVal) { params.set('date_from', dateVal); params.set('date_to', dateVal); }
+    const resp = await fetch('/api/ideas/search?' + params.toString());
     const data = await resp.json();
-    if (data.error) {
-      container.innerHTML = `<div class="empty-state"><p>搜索出错: ${escapeHtml(data.error)}</p></div>`;
-      return;
-    }
     if (!data.results || !data.results.length) {
-      container.innerHTML = '<div class="empty-state"><p>未找到相关结果</p></div>';
+      container.innerHTML = `<div class="empty-state"><div class="icon">🔍</div><h3>未找到相关灵感</h3><p>尝试其他关键词或日期</p></div>`;
       return;
     }
-    container.innerHTML = data.results.map(r => `
-      <div class="modal-section">
-        <div class="search-result">
-          <div class="s-title"><a href="${r.url||'#'}" target="_blank">${escapeHtml(r.title||'无标题')}</a></div>
-          <div class="s-snippet">${escapeHtml(r.snippet||'')}</div>
-        </div>
-      </div>
-    `).join('');
-  } catch(e) {
-    container.innerHTML = `<div class="empty-state"><p>搜索失败: ${escapeHtml(e.message)}</p></div>`;
-  }
+    container.innerHTML = `<div class="search-results"><div class="search-header">找到 ${data.count} 条结果</div></div>` +
+      data.results.map(idea => `
+        <div class="idea-card" onclick="openIdea(${idea.id})">
+          <div class="card-top"><span class="card-id">#${idea.id}</span><span class="card-time">${idea.created_at || ''}</span></div>
+          <div class="card-content">${keyword ? highlightKeyword(escapeHtml(idea.content), keyword) : escapeHtml(idea.content)}</div>
+          <div class="card-bottom">${getCardTagHtml(idea)}</div>
+        </div>`).join('');
+  } catch(e) { container.innerHTML = `<div class="empty-state"><p>搜索失败</p></div>`; }
 }
 
-function quickSearch(q) {
-  const input = document.getElementById('searchInput');
-  if (input) { input.value = q; doSearch(); }
+function highlightKeyword(html, keyword) {
+  const escaped = escapeHtml(keyword);
+  return html.replace(new RegExp(`(${escaped.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'), '<mark style="background:#ede9fe;padding:0 2px;border-radius:2px;">$1</mark>');
 }
 
-// ====== Daily Review ======
-
-async function fetchReviews() {
-  try {
-    const resp = await fetch('/api/reviews');
-    const data = await resp.json();
-    return data.reviews || [];
-  } catch(e) {
-    return [];
-  }
-}
-
-function renderReview() {
+// ====== Today's Todos ======
+async function fetchTodos() {
   const container = document.getElementById('ideaList');
-  container.innerHTML = `
-    <div class="review-input-area">
-      <div class="label" style="margin-bottom:6px;">📝 今天做了什么？</div>
-      <textarea id="reviewInput" placeholder="写下今天的工作内容、进展、遇到的问题、想法…&#10;&#10;例如：&#10;- 完成了台架试验方案评审&#10;- 与供应商讨论了密封件交期&#10;- 发现曲轴扭振数据异常，需要进一步排查"></textarea>
-      <button class="review-submit-btn" id="reviewSubmitBtn" onclick="submitReview()">🤖 开始复盘分析</button>
-    </div>
-    <div id="reviewList">
-      <div class="loading-dots"><span></span><span></span><span></span></div>
-    </div>
-  `;
-  loadReviewList();
+  document.getElementById('memorySection').innerHTML = '';
+  container.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
+  try {
+    const resp = await fetch('/api/todos');
+    const data = await resp.json();
+    todoItems = data.todos || [];
+    renderTodos();
+  } catch(e) { container.innerHTML = `<div class="empty-state"><p>加载失败</p></div>`; }
 }
 
-async function loadReviewList() {
-  const reviews = await fetchReviews();
-  const container = document.getElementById('reviewList');
-  if (!reviews.length) {
-    container.innerHTML = `
-      <div class="empty-state" style="padding:30px 20px;">
-        <div class="icon">📋</div>
-        <h3>还没有复盘记录</h3>
-        <p>写下今天的工作内容，AI 帮你分析进步和优化方向</p>
-      </div>`;
+function renderTodos() {
+  const container = document.getElementById('ideaList');
+  if (!todoItems.length) {
+    container.innerHTML = `<div class="empty-state"><div class="icon">✅</div><h3>今日暂无待办</h3><p>将灵感标记为待办后会出现在这里</p></div>`;
     return;
   }
-  container.innerHTML = reviews.map((r, i) => `
-    <div class="review-card" id="review-card-${r.id}" onclick="toggleReviewDetail(${r.id})">
-      <div class="review-date">
-        <span class="date-badge">${formatReviewDate(r.created_at)}</span>
-        ${r.model ? `<span style="font-size:10px;color:var(--muted);">${r.model}</span>` : ''}
-        <span style="flex:1;"></span>
-        <span class="review-toggle-arrow" id="review-arrow-${r.id}">▶</span>
-      </div>
-      <div class="review-date" style="font-size:12px;color:var(--muted);margin-top:4px;">
-        ${escapeHtml((r.content||'').slice(0,60))}${(r.content||'').length > 60 ? '…' : ''}
-      </div>
-      <div class="review-detail" id="review-detail-${r.id}" style="display:none;">
-        <div class="review-section">
-          <div class="rs-label">📝 我的记录</div>
-          <div class="rs-content" style="color:var(--muted);">${escapeHtml(r.content)}</div>
+  const now = new Date();
+  container.innerHTML = todoItems.map(t => {
+    const isOverdue = t.remind_at && new Date(t.remind_at.replace(' ','T')) < now;
+    const domainLabel = (t.decision === 'todo-work') ? '🔧 工作' : '🌱 生活';
+    const domainClass = (t.decision === 'todo-work') ? 'work' : 'life';
+    return `
+      <div class="todo-card" id="todo-${t.id}" onclick="openIdea(${t.id})">
+        <div class="todo-check" onclick="event.stopPropagation();completeTodo(${t.id})"></div>
+        <div class="todo-body">
+          <div class="todo-content">${escapeHtml(t.content)}</div>
+          <div style="display:flex;gap:6px;align-items:center;margin-top:2px;">
+            <span class="todo-domain ${domainClass}">${domainLabel}</span>
+            ${t.remind_at ? `<span class="todo-time ${isOverdue ? 'todo-overdue' : ''}">${isOverdue ? '⏰ 已过期' : '⏰'} ${formatTime(t.remind_at)}</span>` : ''}
+          </div>
         </div>
-        ${r.progress ? `
-        <div class="review-section">
-          <div class="rs-label">🏆 今日最大进步</div>
-          <div class="rs-content">${escapeHtml(r.progress)}</div>
-        </div>` : ''}
-        ${r.optimization ? `
-        <div class="review-section">
-          <div class="rs-label">💡 明日优化建议</div>
-          <div class="rs-content">${escapeHtml(r.optimization)}</div>
-        </div>` : ''}
-        <button onclick="event.stopPropagation();deleteReview(${r.id})" style="margin-top:8px;font-size:11px;padding:4px 10px;border:none;border-radius:var(--radius);background:var(--bg);color:var(--muted);cursor:pointer;">🗑️ 删除</button>
-      </div>
-    </div>
-  `).join('');
+      </div>`;
+  }).join('');
 }
 
-function toggleReviewDetail(id) {
-  const detail = document.getElementById('review-detail-' + id);
-  const arrow = document.getElementById('review-arrow-' + id);
-  if (detail.style.display === 'none') {
-    detail.style.display = 'block';
-    arrow.textContent = '▼';
-  } else {
-    detail.style.display = 'none';
-    arrow.textContent = '▶';
-  }
-}
-
-async function submitReview() {
-  const input = document.getElementById('reviewInput');
-  const btn = document.getElementById('reviewSubmitBtn');
-  const content = input.value.trim();
-  if (!content) { showToast('请输入今天的工作内容'); return; }
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span>AI 分析中…';
+async function completeTodo(id) {
   try {
-    const resp = await fetch('/api/reviews', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({content})
-    });
-    const review = await resp.json();
-    if (review.id) {
-      showToast('✅ 复盘已保存！原始记录与分析结果均已存储');
-      input.value = '';
-      loadReviewList();
-    } else {
-      showToast('分析失败，请重试');
-    }
-  } catch(e) {
-    showToast('网络错误，请重试');
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '🤖 开始复盘分析';
-  }
-}
-
-async function deleteReview(id) {
-  if (!confirm('确认删除这条复盘记录？')) return;
-  try {
-    await fetch(`/api/reviews/${id}`, {method:'DELETE'});
-    showToast('已删除');
-    loadReviewList();
-  } catch(e) {
-    showToast('删除失败');
-  }
+    await fetch(`/api/todos/${id}/complete`, {method:'POST'});
+    const card = document.getElementById('todo-' + id);
+    if (card) { card.classList.add('done'); card.style.opacity = '0.5'; setTimeout(() => card.remove(), 400); }
+    showToast('✅ 已完成');
+  } catch(e) { showToast('操作失败'); }
 }
 
 // ====== Submit Idea ======
@@ -565,7 +470,7 @@ async function submitIdea() {
   btn.disabled = true;
   input.value = '';
   input.style.height = 'auto';
-  showLoading();
+  document.getElementById('ideaList').innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
   try {
     const resp = await fetch('/api/ideas', {
       method: 'POST',
@@ -575,23 +480,16 @@ async function submitIdea() {
     const idea = await resp.json();
     showToast(`已记录灵感 #${idea.id}（${getDecisionLabel(idea.decision||'')}）`);
     switchTab('all');
-    await fetchIdeas();
-  } catch(e) {
-    showToast('记录失败，请重试');
-  } finally {
-    btn.disabled = false;
-  }
+  } catch(e) { showToast('记录失败，请重试'); } finally { btn.disabled = false; }
 }
 
-// ====== Open Idea Detail ======
+// ====== Idea Detail Modal ======
 async function openIdea(id) {
   try {
     const resp = await fetch(`/api/ideas/${id}`);
     const idea = await resp.json();
     showModal(idea);
-  } catch(e) {
-    showToast('加载失败');
-  }
+  } catch(e) { showToast('加载失败'); }
 }
 
 function showModal(idea) {
@@ -608,12 +506,11 @@ function showModal(idea) {
       <div class="search-result">
         <div class="s-title"><a href="${r.url||'#'}" target="_blank">${escapeHtml(r.title||'无标题')}</a></div>
         <div class="s-snippet">${escapeHtml(r.snippet||'')}</div>
-      </div>
-    `).join('');
+      </div>`).join('');
   }
 
-  const isTodo = idea.decision && idea.decision.startsWith('todo');
   const tags = (idea.tags||'').split(',').filter(Boolean);
+  const isTodo = idea.decision && idea.decision.startsWith('todo');
   const todoSection = isTodo ? `
     <div class="modal-section" style="background:#fefce8;border-radius:var(--radius);padding:10px 12px;">
       <div class="label" style="color:#92400e;">⏰ 待办提醒</div>
@@ -624,14 +521,12 @@ function showModal(idea) {
     </div>` : `
     <div class="modal-section" style="background:#f0fdf4;border-radius:var(--radius);padding:10px 12px;">
       <div class="label" style="color:#166534;">📋 加入待办</div>
-      <div style="margin-top:8px;">
-        <div class="reminder-row" style="margin-bottom:8px;">
-          <input type="datetime-local" id="remindTime" value="${getDefaultRemindTime()}">
-        </div>
-        <div style="display:flex;gap:8px;">
-          <button class="todo-btn" onclick="markAsTodo(${idea.id}, 'todo-work')" style="flex:1;padding:8px 12px;border:none;border-radius:var(--radius);background:var(--brand);color:#fff;font-size:13px;font-weight:500;cursor:pointer;">🔧 工作待办 + 提醒</button>
-          <button class="todo-btn" onclick="markAsTodo(${idea.id}, 'todo-life')" style="flex:1;padding:8px 12px;border:none;border-radius:var(--radius);background:#f59e0b;color:#fff;font-size:13px;font-weight:500;cursor:pointer;">🌱 生活待办 + 提醒</button>
-        </div>
+      <div class="reminder-row" style="margin-bottom:6px;">
+        <input type="datetime-local" id="remindTime" value="${getDefaultRemindTime()}">
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button onclick="markAsTodo(${idea.id}, 'todo-work')" style="flex:1;padding:7px 10px;border:none;border-radius:var(--radius);background:var(--brand);color:#fff;font-size:12px;font-weight:500;cursor:pointer;">🔧 工作待办</button>
+        <button onclick="markAsTodo(${idea.id}, 'todo-life')" style="flex:1;padding:7px 10px;border:none;border-radius:var(--radius);background:var(--orange);color:#fff;font-size:12px;font-weight:500;cursor:pointer;">🌱 生活待办</button>
       </div>
     </div>`;
 
@@ -646,7 +541,7 @@ function showModal(idea) {
     </div>
     ${tags.length ? `<div class="modal-section">
       <div class="label">分类标签</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+      <div style="display:flex;gap:4px;flex-wrap:wrap;">
         ${tags.map(t => `<span class="tag ${getTagClass(t)}">${getTagLabel(t)}</span>`).join('')}
       </div>
     </div>` : ''}
@@ -663,28 +558,16 @@ function showModal(idea) {
       <div class="label">决策结果</div>
       <div><span class="decision-badge ${idea.decision}">${getDecisionLabel(idea.decision)}</span></div>
     </div>` : ''}
-    ${idea.feasibility ? `<div class="modal-section">
-      <div class="label">工作类评分</div>
-      <div class="score-row">
-        <div class="score-item"><span class="num">${idea.feasibility||'-'}</span><span class="lbl">可行性</span></div>
-        <div class="score-item"><span class="num">${idea.priority||'-'}</span><span class="lbl">优先级</span></div>
-        <div class="score-item"><span class="num">${idea.urgency||'-'}</span><span class="lbl">紧迫性</span></div>
-        <div class="score-item"><span class="num">${idea.risk||'-'}</span><span class="lbl">风险性</span></div>
-      </div>
-    </div>` : ''}
     ${idea.suggestion ? `<div class="modal-section">
       <div class="label">建议</div>
       <div class="value">${idea.suggestion}</div>
     </div>` : ''}
-    ${searchHtml ? `<div class="modal-section">
-      <div class="label">搜索结果</div>
-      ${searchHtml}
-    </div>` : ''}
+    ${searchHtml ? `<div class="modal-section"><div class="label">搜索结果</div>${searchHtml}</div>` : ''}
     ${todoSection}
     <div class="modal-actions">
       <button onclick="searchIdea(${idea.id})">🔍 搜索背景</button>
       <button onclick="reanalyzeIdea(${idea.id})">📊 重新分析</button>
-      <button onclick="deleteIdea(${idea.id})" style="color:#ef4444;">🗑️ 删除</button>
+      <button onclick="deleteIdea(${idea.id})" style="color:var(--red);">🗑️ 删除</button>
     </div>
   `;
   overlay.classList.add('show');
@@ -707,86 +590,51 @@ async function setReminder(ideaId) {
   const input = document.getElementById('remindTime');
   const btn = document.getElementById('remindBtn');
   if (!input.value) { showToast('请选择提醒时间'); return; }
-  btn.disabled = true;
-  btn.textContent = '设置中…';
+  btn.disabled = true; btn.textContent = '设置中…';
   try {
     const resp = await fetch(`/api/ideas/${ideaId}/reminder`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
+      method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({remind_at: input.value.replace('T', ' ')})
     });
     const data = await resp.json();
-    if (data.ok) {
-      showToast('✅ 提醒已设置');
-      updateBellBadge();
-    }
-  } catch(e) {
-    showToast('设置失败，请重试');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = '设置提醒';
-  }
+    if (data.ok) { showToast('✅ 提醒已设置'); updateBellBadge(); }
+  } catch(e) { showToast('设置失败'); } finally { btn.disabled = false; btn.textContent = '设置提醒'; }
 }
 
 async function markAsTodo(ideaId, decision) {
   const input = document.getElementById('remindTime');
   if (!input.value) { showToast('请选择提醒时间'); return; }
-  const btns = document.querySelectorAll('.todo-btn');
-  btns.forEach(b => b.disabled = true);
   try {
-    // 1. Update idea decision to todo
-    const resp1 = await fetch(`/api/ideas/${ideaId}`, {
-      method: 'PUT',
-      headers: {'Content-Type':'application/json'},
+    await fetch(`/api/ideas/${ideaId}`, {
+      method: 'PUT', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({decision: decision, suggestion: '用户手动标记为待办'})
     });
-    const idea = await resp1.json();
-    if (!idea.id) { showToast('设置失败'); return; }
-    // 2. Set reminder
-    const resp2 = await fetch(`/api/ideas/${ideaId}/reminder`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
+    await fetch(`/api/ideas/${ideaId}/reminder`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({remind_at: input.value.replace('T', ' ')})
     });
-    const data = await resp2.json();
-    if (data.ok) {
-      showToast('✅ 已加入待办并设置提醒');
-      updateBellBadge();
-      fetchIdeas();
-      // Reopen modal to show updated state
-      openIdea(ideaId);
-    }
-  } catch(e) {
-    showToast('操作失败，请重试');
-  } finally {
-    btns.forEach(b => b.disabled = false);
-  }
+    showToast('✅ 已加入待办并设置提醒');
+    updateBellBadge();
+    fetchIdeas();
+    openIdea(ideaId);
+  } catch(e) { showToast('操作失败'); }
 }
 
 async function changeDomain(ideaId, domain) {
   try {
-    await fetch(`/api/ideas/${ideaId}`, {
-      method: 'PUT',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({domain: domain})
-    });
+    await fetch(`/api/ideas/${ideaId}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({domain}) });
     showToast('✅ 分类已更新');
     fetchIdeas();
     openIdea(ideaId);
-  } catch(e) {
-    showToast('更新失败，请重试');
-  }
+  } catch(e) { showToast('更新失败'); }
 }
 
 async function searchIdea(id) {
   try {
-    const resp = await fetch(`/api/ideas/${id}/search`, {method:'POST'});
-    const data = await resp.json();
+    await fetch(`/api/ideas/${id}/search`, {method:'POST'});
     showToast('搜索完成');
     openIdea(id);
-  } catch(e) {
-    showToast('搜索失败');
-  }
+  } catch(e) { showToast('搜索失败'); }
 }
 
 async function reanalyzeIdea(id) {
@@ -795,9 +643,7 @@ async function reanalyzeIdea(id) {
     showToast('分析完成');
     openIdea(id);
     fetchIdeas();
-  } catch(e) {
-    showToast('分析失败');
-  }
+  } catch(e) { showToast('分析失败'); }
 }
 
 async function deleteIdea(id) {
@@ -807,109 +653,101 @@ async function deleteIdea(id) {
     closeModal();
     showToast('已删除');
     fetchIdeas();
-  } catch(e) {
-    showToast('删除失败');
-  }
+  } catch(e) { showToast('删除失败'); }
 }
 
 function refreshCurrent() {
-  fetchIdeas();
+  if (currentTab === 'todo-list') fetchTodos();
+  else fetchIdeas();
   showToast('已刷新');
 }
 
-// ====== Notification System ======
+// ====== Daily Review ======
+async function fetchReviews() {
+  try { const resp = await fetch('/api/reviews'); const data = await resp.json(); return data.reviews || []; } catch(e) { return []; }
+}
 
+function renderReview() {
+  const container = document.getElementById('ideaList');
+  document.getElementById('memorySection').innerHTML = '';
+  container.innerHTML = `
+    <div class="review-input-area">
+      <div class="label" style="margin-bottom:4px;">📝 今天做了什么？</div>
+      <textarea id="reviewInput" placeholder="写下今天的工作内容、进展、遇到的问题、想法…"></textarea>
+      <button class="review-submit-btn" id="reviewSubmitBtn" onclick="submitReview()">🤖 开始复盘分析</button>
+    </div>
+    <div id="reviewList"><div class="loading-dots"><span></span><span></span><span></span></div></div>`;
+  loadReviewList();
+}
+
+async function loadReviewList() {
+  const reviews = await fetchReviews();
+  const container = document.getElementById('reviewList');
+  if (!reviews.length) {
+    container.innerHTML = `<div class="empty-state" style="padding:30px 20px;"><div class="icon">📋</div><h3>还没有复盘记录</h3><p>写下今天的工作内容，AI 帮你分析</p></div>`;
+    return;
+  }
+  container.innerHTML = reviews.map(r => `
+    <div class="review-card" onclick="toggleReviewDetail(${r.id})">
+      <div class="review-date">
+        <span class="date-badge">${formatReviewDate(r.created_at)}</span>
+        ${r.model ? `<span style="font-size:10px;color:var(--muted);">${r.model}</span>` : ''}
+        <span style="flex:1;"></span>
+        <span id="review-arrow-${r.id}">▶</span>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px;">${escapeHtml((r.content||'').slice(0,50))}${(r.content||'').length>50?'…':''}</div>
+      <div id="review-detail-${r.id}" style="display:none;">
+        <div class="review-section"><div class="rs-label">📝 我的记录</div><div class="rs-content" style="color:var(--muted);">${escapeHtml(r.content)}</div></div>
+        ${r.progress?`<div class="review-section"><div class="rs-label">🏆 今日最大进步</div><div class="rs-content">${escapeHtml(r.progress)}</div></div>`:''}
+        ${r.optimization?`<div class="review-section"><div class="rs-label">💡 明日优化建议</div><div class="rs-content">${escapeHtml(r.optimization)}</div></div>`:''}
+        <button onclick="event.stopPropagation();deleteReview(${r.id})" style="margin-top:6px;font-size:11px;padding:3px 8px;border:none;border-radius:var(--radius);background:var(--bg);color:var(--muted);cursor:pointer;">🗑️ 删除</button>
+      </div>
+    </div>`).join('');
+}
+
+function toggleReviewDetail(id) {
+  const detail = document.getElementById('review-detail-' + id);
+  const arrow = document.getElementById('review-arrow-' + id);
+  if (detail.style.display === 'none') { detail.style.display = 'block'; arrow.textContent = '▼'; }
+  else { detail.style.display = 'none'; arrow.textContent = '▶'; }
+}
+
+async function submitReview() {
+  const input = document.getElementById('reviewInput');
+  const btn = document.getElementById('reviewSubmitBtn');
+  const content = input.value.trim();
+  if (!content) { showToast('请输入今天的工作内容'); return; }
+  btn.disabled = true; btn.innerHTML = '⏳ AI 分析中…';
+  try {
+    const resp = await fetch('/api/reviews', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({content}) });
+    const review = await resp.json();
+    if (review.id) { showToast('✅ 复盘已保存'); input.value = ''; loadReviewList(); }
+    else showToast('分析失败，请重试');
+  } catch(e) { showToast('网络错误'); } finally { btn.disabled = false; btn.innerHTML = '🤖 开始复盘分析'; }
+}
+
+async function deleteReview(id) {
+  if (!confirm('确认删除？')) return;
+  try { await fetch(`/api/reviews/${id}`, {method:'DELETE'}); showToast('已删除'); loadReviewList(); } catch(e) { showToast('删除失败'); }
+}
+
+// ====== Notification ======
 async function updateBellBadge() {
   try {
     const resp = await fetch('/api/reminders/count');
     const data = await resp.json();
     const badge = document.getElementById('bellBadge');
     const count = data.count || 0;
-    if (count > 0) {
-      badge.textContent = count > 99 ? '99+' : count;
-      badge.style.display = 'flex';
-      // If count increased, show browser notification
-      if (count > lastNotifCount) {
-        showBrowserNotification(count);
-      }
-      lastNotifCount = count;
-    } else {
-      badge.style.display = 'none';
-      lastNotifCount = 0;
-    }
-  } catch(e) {}
-}
-
-function showBrowserNotification(count) {
-  if (!('Notification' in window)) return;
-  if (Notification.permission === 'granted') {
-    new Notification('灵感管家', {
-      body: `你有 ${count} 条待办提醒待处理`,
-      icon: '/static/icons/icon-192.png',
-      tag: 'idea-reminder'
-    });
-    // Also send through Service Worker for background notification
-    sendViaServiceWorker('灵感管家', `你有 ${count} 条待办提醒待处理`);
-  }
-}
-
-function sendViaServiceWorker(title, body, url) {
-  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-    navigator.serviceWorker.controller.postMessage({
-      type: 'show-notification',
-      title: title,
-      body: body,
-      tag: 'idea-reminder-' + Date.now(),
-      url: url || '/'
-    });
-  }
-}
-
-async function pollNotifications() {
-  try {
-    const resp = await fetch('/api/reminders/pending');
-    const data = await resp.json();
-    if (data.reminders && data.reminders.length > 0) {
-      // Show browser notifications
-      data.reminders.forEach(r => {
-        const title = '⏰ ' + (r.title || r.idea_content || '').slice(0, 30);
-        const body = (r.message || r.idea_content || '').slice(0, 100);
-        if ('Notification' in window && Notification.permission === 'granted') {
-          new Notification(title, {
-            body: body,
-            icon: '/static/icons/icon-192.png',
-            tag: 'reminder-' + r.id,
-            requireInteraction: true,
-            vibrate: [200, 100, 200]
-          });
-        }
-        // Send via Service Worker for background notification
-        sendViaServiceWorker(title, body, '/');
-      });
-      // Auto-dismiss
-      for (const r of data.reminders) {
-        await fetch(`/api/reminders/${r.id}/dismiss`, {method: 'POST'});
-      }
-      updateBellBadge();
-      // If panel is open, refresh it
-      if (document.getElementById('notifPanel').classList.contains('show')) {
-        loadNotificationList();
-      }
-    }
+    if (count > 0) { badge.textContent = count > 99 ? '99+' : count; badge.style.display = 'flex'; }
+    else badge.style.display = 'none';
   } catch(e) {}
 }
 
 function toggleNotificationPanel() {
   const panel = document.getElementById('notifPanel');
   const overlay = document.getElementById('notifOverlay');
-  if (panel.classList.contains('show')) {
-    panel.classList.remove('show');
-    overlay.classList.remove('show');
-  } else {
-    overlay.classList.add('show');
-    panel.classList.add('show');
-    loadNotificationList();
-  }
+  if (panel.classList.contains('show')) { panel.classList.remove('show'); overlay.classList.remove('show'); }
+  else { overlay.classList.add('show'); panel.classList.add('show'); loadNotificationList(); }
 }
 
 function closeNotificationPanel() {
@@ -924,127 +762,64 @@ async function loadNotificationList() {
     const data = await resp.json();
     const reminders = data.reminders || [];
     if (!reminders.length) {
-      body.innerHTML = `
-        <div class="empty-state" style="padding:30px 20px;">
-          <div class="icon">🔔</div>
-          <h3>暂无通知</h3>
-          <p>待办事项的提醒会在这里显示</p>
-        </div>`;
+      body.innerHTML = `<div class="empty-state" style="padding:30px 20px;"><div class="icon">🔔</div><h3>暂无通知</h3><p>待办提醒会在这里显示</p></div>`;
       return;
     }
-    const now = new Date();
     body.innerHTML = reminders.map(r => {
-      const remindTime = new Date(r.remind_at.replace(' ', 'T'));
-      const isOverdue = remindTime <= now;
-      const timeStr = formatTime(r.remind_at);
-      const content = r.idea_content || '';
-      return `
-        <div class="notif-item">
-          <div class="n-icon" style="${isOverdue ? 'background:#fee2e2;' : ''}">${isOverdue ? '⏰' : '📅'}</div>
-          <div class="n-body">
-            <div class="n-title">${isOverdue ? '⏰ 已到期' : '📅 待提醒'}</div>
-            <div class="n-time">${timeStr}</div>
-            <div class="n-msg">${escapeHtml(content.slice(0, 80))}</div>
-          </div>
-          <div class="n-action">
-            <button onclick="dismissNotif(${r.id})" title="忽略">✕</button>
-          </div>
-        </div>
-      `;
+      const isOverdue = new Date(r.remind_at.replace(' ','T')) <= new Date();
+      return `<div class="notif-item">
+        <div class="n-icon" style="${isOverdue?'background:#fee2e2;':''}">${isOverdue?'⏰':'📅'}</div>
+        <div class="n-body"><div class="n-title">${isOverdue?'⏰ 已到期':'📅 待提醒'}</div><div class="n-time">${formatTime(r.remind_at)}</div><div class="n-msg">${escapeHtml((r.idea_content||'').slice(0,60))}</div></div>
+        <div class="n-action"><button onclick="dismissNotif(${r.id})">✕</button></div>
+      </div>`;
     }).join('');
-  } catch(e) {
-    body.innerHTML = '<div class="empty-state" style="padding:30px 20px;"><p>加载失败</p></div>';
-  }
+  } catch(e) { body.innerHTML = '<div class="empty-state"><p>加载失败</p></div>'; }
 }
 
 async function dismissNotif(id) {
-  try {
-    await fetch(`/api/reminders/${id}/dismiss`, {method: 'POST'});
-    loadNotificationList();
-    updateBellBadge();
-  } catch(e) {}
+  try { await fetch(`/api/reminders/${id}/dismiss`, {method:'POST'}); loadNotificationList(); updateBellBadge(); } catch(e) {}
+}
+
+// ====== Helpers ======
+function escapeHtml(s) {
+  if (!s) return '';
+  const d = document.createElement('div'); d.textContent = s; return d.innerHTML;
 }
 
 function formatTime(t) {
   if (!t) return '';
-  const d = new Date(t.replace(' ', 'T'));
+  const d = new Date(t.replace(' ','T'));
   const pad = n => String(n).padStart(2,'0');
   return `${pad(d.getMonth()+1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 function formatReviewDate(t) {
   if (!t) return '复盘';
-  const d = new Date(t.replace(' ', 'T'));
-  const weekMap = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
-  const week = weekMap[d.getDay()];
-  return `${d.getMonth()+1}月${d.getDate()}日 ${week} 复盘`;
-}
-
-// ====== Request Notification Permission ======
-function requestNotifPermission() {
-  if (!('Notification' in window)) return;
-  if (Notification.permission === 'default') {
-    Notification.requestPermission();
-  }
-}
-
-// ====== Helpers ======
-function escapeHtml(s) {
-  if (!s) return '';
-  const d = document.createElement('div');
-  d.textContent = s;
-  return d.innerHTML;
+  const d = new Date(t.replace(' ','T'));
+  const weekMap = ['周日','周一','周二','周三','周四','周五','周六'];
+  return `${d.getMonth()+1}月${d.getDate()}日 ${weekMap[d.getDay()]} 复盘`;
 }
 
 const TAG_LABELS = {
-  'engine-arch': '发动机架构/结构设计',
-  'combustion': '燃烧/喷射/点火',
-  'hydrogen-safety': '氢气安全/泄漏/防爆',
-  'test-bench': '台架试验/测试方法',
-  'nvh': 'NVH/振动/噪声',
-  'materials': '材料/密封/耐久',
-  'schedule': '进度/排期/里程碑',
-  'resource': '人力/设备/预算',
-  'risk': '风险识别/应对',
-  'quality': '质量/标准/适航',
-  'supply-chain': '供应链/采购',
-  'daily-thought': '日常感悟/随想/反思',
-  'personal-todo': '生活待办/购物/缴费',
-  'health': '健康/运动/体检',
-  'family': '家庭/家人相关',
-  'learning': '学习/阅读/技能',
-  'social': '社交/人脉/活动',
-  'travel': '出行/行程安排',
-  'finance': '个人财务/理财',
-  'procedure': '流程优化/改进',
-  'regulation': '法规/标准/认证',
-  'doc': '文档/报告/纪要',
-  'idea': '初步想法，待评估',
-  'question': '待确认/待研究的问题',
-  'reference': '参考信息/资料',
+  'engine-arch':'发动机架构','combustion':'燃烧/点火','hydrogen-safety':'氢气安全','test-bench':'台架试验',
+  'nvh':'NVH/振动','materials':'材料/耐久','schedule':'进度/排期','resource':'人力/预算','risk':'风险',
+  'quality':'质量/适航','supply-chain':'供应链','daily-thought':'日常感悟','personal-todo':'生活待办',
+  'health':'健康','family':'家庭','learning':'学习','social':'社交','travel':'出行','finance':'理财',
+  'procedure':'流程优化','regulation':'法规标准','doc':'文档','idea':'初步想法','question':'待研究','reference':'参考'
 };
 
-function getTagLabel(tag) {
-  return TAG_LABELS[tag] || tag;
-}
+function getTagLabel(tag) { return TAG_LABELS[tag] || tag; }
 
 function getTagClass(tag) {
   const workTags = ['engine-arch','combustion','hydrogen-safety','test-bench','nvh','materials','schedule','resource','risk','quality','supply-chain'];
   const lifeTags = ['daily-thought','personal-todo','health','family','learning','social','travel','finance'];
-  const procTags = ['procedure','regulation','doc'];
   if (workTags.includes(tag)) return 'work';
   if (lifeTags.includes(tag)) return 'life';
-  if (procTags.includes(tag)) return 'process';
   return 'other';
 }
 
 function getDecisionLabel(d) {
-  const m = {
-    'todo-work': '✅ 工作待办',
-    'todo-life': '✅ 生活待办',
-    'stash': '📌 暂存',
-    'archive': '🗂️ 归档'
-  };
+  const m = {'todo-work':'✅ 工作待办','todo-life':'✅ 生活待办','stash':'📌 暂存','archive':'🗂️ 归档'};
   return m[d] || d;
 }
 
@@ -1059,31 +834,21 @@ function getCardTagHtml(idea) {
   const tag = getCardTag(idea);
   if (!tag) return '';
   const cls = tag === '待办' ? 'todo' : tag.toLowerCase();
-  const tabMap = { '工作': 'work', '生活': 'life', '待办': 'todo' };
+  const tabMap = { '工作': 'work', '生活': 'life', '待办': 'todo-list' };
   const tab = tabMap[tag];
   return `<span class="tag ${cls} tag-clickable" onclick="event.stopPropagation();switchTab('${tab}')">${tag}</span>`;
 }
 
 // ====== Version Check ======
-const APP_VERSION = '2.3.1';
+const APP_VERSION = '3.0.1';
 
 async function checkVersion() {
   try {
     const resp = await fetch('/api/version?_=' + Date.now());
     const data = await resp.json();
     if (data.version && data.version !== APP_VERSION) {
-      console.log('New version detected:', data.version, 'current:', APP_VERSION);
-      // Unregister old Service Worker
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(regs => {
-          regs.forEach(r => r.unregister());
-        });
-      }
-      // Force clear all caches
-      if ('caches' in window) {
-        caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))));
-      }
-      // Hard reload after clearing
+      if ('serviceWorker' in navigator) { navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister())); }
+      if ('caches' in window) { caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))); }
       setTimeout(() => window.location.reload(true), 800);
     }
   } catch(e) {}
@@ -1092,34 +857,18 @@ async function checkVersion() {
 // ====== Init ======
 document.addEventListener('DOMContentLoaded', () => {
   fetchIdeas();
-  // Check version on startup
   checkVersion();
-  // Register service worker with auto-update
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js?v=' + APP_VERSION).then(reg => {
-      // Immediately check for updates
       reg.update().catch(() => {});
-      // Check for SW updates every 15 seconds
       setInterval(() => reg.update().catch(() => {}), 15000);
-      // When a new SW takes over, reload the page
       let refreshing = false;
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (!refreshing) {
-          refreshing = true;
-          window.location.reload(true);
-        }
-      });
+      navigator.serviceWorker.addEventListener('controllerchange', () => { if (!refreshing) { refreshing = true; window.location.reload(true); } });
     }).catch(() => {});
   }
-  // Start notification polling (every 30s)
   updateBellBadge();
-  pollNotifications();
-  notifInterval = setInterval(() => {
-    updateBellBadge();
-    pollNotifications();
-  }, 30000);
-  // Request notification permission (after user interaction)
-  document.addEventListener('click', requestNotifPermission, {once: true});
+  notifInterval = setInterval(() => { updateBellBadge(); }, 30000);
+  document.addEventListener('click', () => { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission(); }, {once: true});
 });
 </script>
 </body>
