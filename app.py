@@ -26,8 +26,9 @@ def api_list_ideas():
     status = request.args.get('status')
     domain = request.args.get('domain')
     decision = request.args.get('decision')
+    decision__in = request.args.get('decision__in')
     tag = request.args.get('tag')
-    ideas = list_ideas(status=status, domain=domain, decision=decision, tag=tag)
+    ideas = list_ideas(status=status, domain=domain, decision=decision, decision__in=decision__in, tag=tag)
     return jsonify({'ideas': ideas, 'stats': get_stats()})
 
 @app.route('/api/ideas/<int:idea_id>', methods=['GET'])
@@ -91,7 +92,7 @@ def api_search_idea(idea_id):
 def api_version():
     """返回部署版本信息，用于调试"""
     info = {
-        'version': '2.0.1',
+        'version': '2.1.0',
         'search_engine': 'anysearch_http_api',
         'python': sys.version,
     }

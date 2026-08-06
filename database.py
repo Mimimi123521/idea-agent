@@ -84,7 +84,7 @@ def get_idea(idea_id):
     conn.close()
     return dict(row) if row else None
 
-def list_ideas(status=None, domain=None, decision=None, tag=None):
+def list_ideas(status=None, domain=None, decision=None, decision__in=None, tag=None):
     conn = get_db()
     query = "SELECT * FROM ideas WHERE 1=1"
     params = []
@@ -97,6 +97,12 @@ def list_ideas(status=None, domain=None, decision=None, tag=None):
     if decision:
         query += " AND decision=?"
         params.append(decision)
+    if decision__in:
+        decisions = [d.strip() for d in decision__in.split(',') if d.strip()]
+        if decisions:
+            placeholders = ','.join(['?'] * len(decisions))
+            query += f" AND decision IN ({placeholders})"
+            params.extend(decisions)
     if tag:
         query += " AND tags LIKE ?"
         params.append(f'%{tag}%')
