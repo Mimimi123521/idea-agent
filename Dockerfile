@@ -9,11 +9,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
+# Make start script executable
+RUN chmod +x /app/start.sh
+
 # Create data directory for SQLite
 RUN mkdir -p /app/data
 
 # Expose port
 EXPOSE 5000
 
-# Run with gunicorn on Railway's PORT
-CMD gunicorn --bind 0.0.0.0:${PORT:-5000} --workers 1 --timeout 120 app:app
+# Run with startup script
+CMD ["/app/start.sh"]
