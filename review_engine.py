@@ -32,11 +32,26 @@ SYSTEM_PROMPT = """你是一位温暖而敏锐的私人复盘教练，擅长帮�
 如果用户描述的内容太少或太模糊，请友好地引导用户补充更多细节。"""
 
 
-def analyze_daily_review(content):
-    """调用 DeepSeek API 分析每日复盘内容"""
+def analyze_daily_review(content, previous_review=None):
+    """调用 DeepSeek API 分析每日复盘内容
+
+    Args:
+        content: 用户今日复盘内容
+        previous_review: 上次复盘记录 dict，含 content / progress / optimization / created_at
+    """
     if not DEEPSEEK_API_KEY:
-        # 如果没有 API Key，返回本地分析结果
-        return _local_analysis(content)
+        return _local_analysis(content, previous_review)
+
+    # 构建消息列表
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+
+    # 如果接续上次复盘，将上次的上下文注入
+    if previous_review:
+        prev_context = _build_continue_context(previous_review)
+        messages.append({"role": "user", "content": prev_context})
+        messages.append({"role": "assistant", "content": _format_prev_response(previous_review)})
+
+    messages.append({"role": "user", "content": content})
 
     try:
         resp = requests.post(
@@ -47,10 +62,7 @@ def analyze_daily_review(content):
             },
             json={
                 "model": DEEPSEEK_MODEL,
-                "messages": [
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": content}
-                ],
+                "messages": messages,
                 "temperature": 0.7,
                 "max_tokens": 1024
             },
@@ -64,13 +76,36 @@ def analyze_daily_review(content):
             'progress': progress,
             'optimization': optimization,
             'raw_response': raw,
-            'model': DEEPSEEK_MODEL
+            'model': DEEPSEEK_MODEL,
+            'continued_from': previous_review.get('id') if previous_review else None
         }
     except Exception as e:
-        # 降级：使用本地分析
-        result = _local_analysis(content)
+        result = _local_analysis(content, previous_review)
         result['error'] = str(e)
         return result
+
+
+def _build_continue_context(prev):
+    """构建接续复盘的上文提示"""
+    date = prev.get('created_at', '上次')[:10] if prev.get('created_at') else '上次'
+    parts = [f"以下是用户 {date} 的复盘记录，请参考作为今日复盘的背景："]
+    if prev.get('content'):
+        parts.append(f"上次记录：{prev['content'][:300]}")
+    if prev.get('progress'):
+        parts.append(f"上次收获：{prev['progress'][:200]}")
+    if prev.get('optimization'):
+        parts.append(f"上次建议：{prev['optimization'][:200]}")
+    return '\n'.join(parts)
+
+
+def _format_prev_response(prev):
+    """格式化上次 AI 回复作为对话历史"""
+    parts = []
+    if prev.get('progress'):
+        parts.append(f"【今日最大收获】\n{prev['progress']}")
+    if prev.get('optimization'):
+        parts.append(f"【明日可以尝试的】\n{prev['optimization']}")
+    return '\n\n'.join(parts) if parts else '收到，已记录。'
 
 
 def _parse_response(raw):
@@ -108,10 +143,12 @@ def _parse_response(raw):
     return progress, optimization
 
 
-def _local_analysis(content):
+def _local_analysis(content, previous_review=None):
     """本地分析（无 API 时的降级方案）"""
     keywords = content.replace('\n', ' ').strip()
     word_count = len(keywords)
+
+    continued_from = previous_review.get('id') if previous_review else None
 
     if word_count < 20:
         progress = '今天记录的内容比较简短，但愿意停下来反思本身就是一种成长。'
@@ -127,9 +164,13 @@ def _local_analysis(content):
             '2. 如果有困惑或纠结的事，试着写下来，写的过程本身就是答案的一部分'
         )
 
+    if previous_review and previous_review.get('optimization'):
+        optimization = f"上次复盘建议回顾：{previous_review['optimization'][:100]}…\n\n{optimization}"
+
     return {
         'progress': progress,
         'optimization': optimization,
         'raw_response': f'【今日最大收获】\n{progress}\n\n【明日可以尝试的】\n{optimization}',
-        'model': 'local-fallback'
+        'model': 'local-fallback',
+        'continued_from': continued_from
     }

@@ -194,6 +194,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-
 .review-submit-btn{width:100%;padding:9px;border:none;border-radius:var(--radius);background:var(--brand);color:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;}
 .review-submit-btn:active{transform:scale(.97);}
 .review-submit-btn:disabled{opacity:.4;}
+.continue-toggle{width:38px;height:38px;border-radius:50%;border:1px solid var(--border);background:var(--surface);font-size:16px;cursor:pointer;flex-shrink:0;transition:all .15s;color:var(--muted);}
+.continue-toggle.active{background:#f0fdf4;border-color:var(--green);color:var(--green);}
 
 /* ====== Responsive ====== */
 @media (min-width:480px){
@@ -667,6 +669,9 @@ async function fetchReviews() {
   try { const resp = await fetch('/api/reviews'); const data = await resp.json(); return data.reviews || []; } catch(e) { return []; }
 }
 
+// ====== Continue Review State ======
+let continueFromId = null;
+
 function renderReview() {
   const container = document.getElementById('ideaList');
   document.getElementById('memorySection').innerHTML = '';
@@ -674,10 +679,56 @@ function renderReview() {
     <div class="review-input-area">
       <div class="label" style="margin-bottom:4px;">📝 今天做了什么？</div>
       <textarea id="reviewInput" placeholder="写下今天的工作内容、进展、遇到的问题、想法…"></textarea>
-      <button class="review-submit-btn" id="reviewSubmitBtn" onclick="submitReview()">🤖 开始复盘分析</button>
+      <div id="continuePanel" style="margin-bottom:8px;"></div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <button class="review-submit-btn" id="reviewSubmitBtn" onclick="submitReview()" style="flex:1;">🤖 开始复盘分析</button>
+        <button id="continueToggleBtn" class="continue-toggle" onclick="toggleContinue()" title="接续上次复盘">📎</button>
+      </div>
     </div>
     <div id="reviewList"><div class="loading-dots"><span></span><span></span><span></span></div></div>`;
   loadReviewList();
+  loadLatestReviewForContinue();
+}
+
+async function loadLatestReviewForContinue() {
+  try {
+    const resp = await fetch('/api/reviews');
+    const data = await resp.json();
+    const reviews = data.reviews || [];
+    if (reviews.length > 0) {
+      const latest = reviews[0];
+      // 存储最近复盘，供接续使用
+      document.getElementById('continueToggleBtn').dataset.latestId = latest.id;
+      document.getElementById('continueToggleBtn').dataset.latestDate = formatReviewDate(latest.created_at);
+      document.getElementById('continueToggleBtn').dataset.latestContent = (latest.content || '').slice(0, 80);
+    }
+  } catch(e) {}
+}
+
+function toggleContinue() {
+  const btn = document.getElementById('continueToggleBtn');
+  const panel = document.getElementById('continuePanel');
+  const latestId = btn.dataset.latestId;
+  if (!latestId) { showToast('暂无历史复盘可接续'); return; }
+
+  if (continueFromId === parseInt(latestId)) {
+    // 取消接续
+    continueFromId = null;
+    btn.classList.remove('active');
+    panel.innerHTML = '';
+  } else {
+    // 启用接续
+    continueFromId = parseInt(latestId);
+    btn.classList.add('active');
+    panel.innerHTML = `
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:var(--radius);padding:8px 10px;font-size:12px;">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+          <span style="color:var(--green);font-weight:600;">📎 接续上次复盘</span>
+          <span style="color:var(--muted);">${btn.dataset.latestDate}</span>
+        </div>
+        <div style="color:var(--muted);line-height:1.5;">${escapeHtml(btn.dataset.latestContent || '')}${(btn.dataset.latestContent||'').length >= 80 ? '…' : ''}</div>
+      </div>`;
+  }
 }
 
 async function loadReviewList() {
@@ -719,9 +770,17 @@ async function submitReview() {
   if (!content) { showToast('请输入今天的工作内容'); return; }
   btn.disabled = true; btn.innerHTML = '⏳ AI 分析中…';
   try {
-    const resp = await fetch('/api/reviews', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({content}) });
+    const body = { content };
+    if (continueFromId) body.continue_from = continueFromId;
+    const resp = await fetch('/api/reviews', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
     const review = await resp.json();
-    if (review.id) { showToast('✅ 复盘已保存'); input.value = ''; loadReviewList(); }
+    if (review.id) {
+      const extra = review.continued_from ? '（已接续上次复盘）' : '';
+      showToast('✅ 复盘已保存' + extra);
+      input.value = '';
+      continueFromId = null;
+      loadReviewList();
+    }
     else showToast('分析失败，请重试');
   } catch(e) { showToast('网络错误'); } finally { btn.disabled = false; btn.innerHTML = '🤖 开始复盘分析'; }
 }

@@ -228,7 +228,14 @@ def api_create_review():
     content = data.get('content', '').strip()
     if not content:
         return jsonify({'error': '内容不能为空'}), 400
-    analysis = analyze_daily_review(content)
+
+    # 接续上次复盘：加载上次复盘内容作为上下文
+    previous_review = None
+    continue_from = data.get('continue_from')
+    if continue_from:
+        previous_review = get_daily_review(int(continue_from))
+
+    analysis = analyze_daily_review(content, previous_review)
     review_id = add_daily_review(
         content=content,
         progress=analysis.get('progress', ''),
@@ -237,6 +244,8 @@ def api_create_review():
     )
     review = get_daily_review(review_id)
     review['model'] = analysis.get('model', 'unknown')
+    if analysis.get('continued_from'):
+        review['continued_from'] = analysis['continued_from']
     return jsonify(review), 201
 
 @app.route('/api/reviews', methods=['GET'])
