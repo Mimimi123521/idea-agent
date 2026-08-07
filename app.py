@@ -97,7 +97,7 @@ def api_search_idea(idea_id):
 @app.route('/api/version', methods=['GET'])
 def api_version():
     info = {
-        'version': '3.0.1',
+        'version': '3.0.2',
         'search_engine': 'anysearch_http_api',
         'python': sys.version,
     }
