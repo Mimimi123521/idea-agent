@@ -196,6 +196,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-
 .review-submit-btn:disabled{opacity:.4;}
 .continue-toggle{width:38px;height:38px;border-radius:50%;border:1px solid var(--border);background:var(--surface);font-size:16px;cursor:pointer;flex-shrink:0;transition:all .15s;color:var(--muted);}
 .continue-toggle.active{background:#f0fdf4;border-color:var(--green);color:var(--green);}
+.continue-option{padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;}
+.continue-option:last-child{border-bottom:none;}
+.continue-option:active{background:var(--bg);}
+.continue-option.chosen{background:#f0fdf4;}
+.co-dot{width:10px;height:10px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;}
+.co-dot.chosen{background:var(--green);border-color:var(--green);}
 
 /* ====== Responsive ====== */
 @media (min-width:480px){
@@ -671,6 +677,7 @@ async function fetchReviews() {
 
 // ====== Continue Review State ======
 let continueFromId = null;
+let allReviewsForContinue = [];
 
 function renderReview() {
   const container = document.getElementById('ideaList');
@@ -682,53 +689,101 @@ function renderReview() {
       <div id="continuePanel" style="margin-bottom:8px;"></div>
       <div style="display:flex;gap:6px;align-items:center;">
         <button class="review-submit-btn" id="reviewSubmitBtn" onclick="submitReview()" style="flex:1;">🤖 开始复盘分析</button>
-        <button id="continueToggleBtn" class="continue-toggle" onclick="toggleContinue()" title="接续上次复盘">📎</button>
+        <button id="continueToggleBtn" class="continue-toggle" onclick="toggleContinuePicker()" title="接续历史复盘">📎</button>
       </div>
+      <div id="continuePicker" style="display:none;margin-top:8px;max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);"></div>
     </div>
     <div id="reviewList"><div class="loading-dots"><span></span><span></span><span></span></div></div>`;
   loadReviewList();
-  loadLatestReviewForContinue();
+  loadAllReviewsForContinue();
 }
 
-async function loadLatestReviewForContinue() {
+async function loadAllReviewsForContinue() {
   try {
     const resp = await fetch('/api/reviews');
     const data = await resp.json();
-    const reviews = data.reviews || [];
-    if (reviews.length > 0) {
-      const latest = reviews[0];
-      // 存储最近复盘，供接续使用
-      document.getElementById('continueToggleBtn').dataset.latestId = latest.id;
-      document.getElementById('continueToggleBtn').dataset.latestDate = formatReviewDate(latest.created_at);
-      document.getElementById('continueToggleBtn').dataset.latestContent = (latest.content || '').slice(0, 80);
+    allReviewsForContinue = data.reviews || [];
+    const btn = document.getElementById('continueToggleBtn');
+    if (allReviewsForContinue.length === 0) {
+      btn.style.display = 'none';
+    } else {
+      btn.style.display = 'flex';
     }
-  } catch(e) {}
+  } catch(e) { allReviewsForContinue = []; }
 }
 
-function toggleContinue() {
+function toggleContinuePicker() {
+  const picker = document.getElementById('continuePicker');
   const btn = document.getElementById('continueToggleBtn');
-  const panel = document.getElementById('continuePanel');
-  const latestId = btn.dataset.latestId;
-  if (!latestId) { showToast('暂无历史复盘可接续'); return; }
-
-  if (continueFromId === parseInt(latestId)) {
-    // 取消接续
-    continueFromId = null;
-    btn.classList.remove('active');
-    panel.innerHTML = '';
-  } else {
-    // 启用接续
-    continueFromId = parseInt(latestId);
+  if (picker.style.display === 'none') {
+    // 打开选择器
+    picker.style.display = 'block';
     btn.classList.add('active');
-    panel.innerHTML = `
-      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:var(--radius);padding:8px 10px;font-size:12px;">
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
-          <span style="color:var(--green);font-weight:600;">📎 接续上次复盘</span>
-          <span style="color:var(--muted);">${btn.dataset.latestDate}</span>
-        </div>
-        <div style="color:var(--muted);line-height:1.5;">${escapeHtml(btn.dataset.latestContent || '')}${(btn.dataset.latestContent||'').length >= 80 ? '…' : ''}</div>
-      </div>`;
+    renderContinuePicker();
+  } else {
+    // 关闭选择器
+    picker.style.display = 'none';
+    btn.classList.remove('active');
   }
+}
+
+function renderContinuePicker() {
+  const picker = document.getElementById('continuePicker');
+  if (!allReviewsForContinue.length) {
+    picker.innerHTML = '<div style="padding:12px;text-align:center;color:var(--muted);font-size:12px;">暂无历史复盘</div>';
+    return;
+  }
+  picker.innerHTML = '<div style="padding:6px 10px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--border);">选择要接续的复盘（AI 将参考其上下文）</div>' +
+    allReviewsForContinue.map(r => {
+      const isSelected = continueFromId === r.id;
+      return `
+      <div class="continue-option${isSelected ? ' chosen' : ''}" onclick="selectReviewToContinue(${r.id})" id="continueOpt-${r.id}">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="co-dot${isSelected ? ' chosen' : ''}"></span>
+          <span style="font-weight:600;font-size:13px;">${formatReviewDate(r.created_at)}</span>
+          ${r.model ? `<span style="font-size:10px;color:var(--muted);">${r.model}</span>` : ''}
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;line-height:1.4;">${escapeHtml((r.content||'').slice(0,60))}${(r.content||'').length>60?'…':''}</div>
+      </div>`;
+    }).join('');
+}
+
+function selectReviewToContinue(reviewId) {
+  const picker = document.getElementById('continuePicker');
+  const panel = document.getElementById('continuePanel');
+  const btn = document.getElementById('continueToggleBtn');
+
+  if (continueFromId === reviewId) {
+    // 取消选中
+    continueFromId = null;
+    panel.innerHTML = '';
+    btn.classList.remove('active');
+    picker.style.display = 'none';
+    renderContinuePicker();
+    return;
+  }
+
+  continueFromId = reviewId;
+  const review = allReviewsForContinue.find(r => r.id === reviewId);
+  picker.style.display = 'none';
+  btn.classList.remove('active');
+
+  // 更新选中卡片
+  panel.innerHTML = `
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:var(--radius);padding:8px 10px;font-size:12px;position:relative;">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+        <span style="color:var(--green);font-weight:600;">📎 接续中</span>
+        <span style="color:var(--muted);">${formatReviewDate(review.created_at)}</span>
+        <span style="margin-left:auto;cursor:pointer;color:var(--muted);font-size:14px;padding:0 4px;" onclick="cancelContinue()">✕</span>
+      </div>
+      <div style="color:var(--muted);line-height:1.5;">${escapeHtml((review.content||'').slice(0,80))}${(review.content||'').length>=80?'…':''}</div>
+    </div>`;
+}
+
+function cancelContinue() {
+  continueFromId = null;
+  document.getElementById('continuePanel').innerHTML = '';
+  document.getElementById('continueToggleBtn').classList.remove('active');
 }
 
 async function loadReviewList() {
