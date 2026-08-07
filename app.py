@@ -10,11 +10,15 @@ from database import add_daily_review, get_daily_review, list_daily_reviews, del
 from agent_engine import process_idea
 from search_engine import search_web, batch_search
 from review_engine import analyze_daily_review
+from backup import backup_database, list_backups, restore_backup, export_json, get_db_info, startup_backup
 
 app = Flask(__name__)
 
 # Initialize database on startup
 init_db()
+
+# 启动备份系统（启动时备份 + 每小时自动备份）
+startup_backup()
 
 # ============ No-Cache Headers ============
 
@@ -97,7 +101,7 @@ def api_search_idea(idea_id):
 @app.route('/api/version', methods=['GET'])
 def api_version():
     info = {
-        'version': '3.0.2',
+        'version': '3.1.0',
         'search_engine': 'anysearch_http_api',
         'python': sys.version,
     }
@@ -251,6 +255,62 @@ def api_get_review(review_id):
 def api_delete_review(review_id):
     delete_daily_review(review_id)
     return jsonify({'ok': True})
+
+# ============ Backup & Data Export ============
+
+@app.route('/api/backup', methods=['POST'])
+def api_backup():
+    """手动触发数据库备份"""
+    result = backup_database()
+    if result:
+        return jsonify({'ok': True, 'path': result, 'backups': list_backups()})
+    return jsonify({'ok': False, 'error': '备份失败'}), 500
+
+@app.route('/api/backup/list', methods=['GET'])
+def api_backup_list():
+    """列出所有备份"""
+    return jsonify({'backups': list_backups(), 'db_info': get_db_info()})
+
+@app.route('/api/backup/download/<name>', methods=['GET'])
+def api_backup_download(name):
+    """下载备份文件"""
+    import flask
+    backup_path = os.path.join(os.path.dirname(__file__), 'data', 'backups', name)
+    if not os.path.exists(backup_path):
+        return jsonify({'error': '备份不存在'}), 404
+    return flask.send_file(backup_path, as_attachment=True, download_name=name)
+
+@app.route('/api/backup/restore/<name>', methods=['POST'])
+def api_backup_restore(name):
+    """从备份恢复数据库"""
+    success = restore_backup(name)
+    if success:
+        return jsonify({'ok': True, 'message': f'已从 {name} 恢复'})
+    return jsonify({'ok': False, 'error': '恢复失败'}), 500
+
+@app.route('/api/export', methods=['GET'])
+def api_export():
+    """导出所有数据为 JSON 文件"""
+    data = export_json()
+    return jsonify(data)
+
+@app.route('/api/export/download', methods=['GET'])
+def api_export_download():
+    """下载 JSON 导出文件"""
+    import flask
+    import io
+    data = export_json()
+    json_str = json.dumps(data, ensure_ascii=False, indent=2)
+    buf = io.BytesIO(json_str.encode('utf-8'))
+    timestamp = __import__('datetime').datetime.now().strftime('%Y%m%d_%H%M%S')
+    return flask.send_file(buf, as_attachment=True, download_name=f'idea-agent-export-{timestamp}.json', mimetype='application/json')
+
+@app.route('/api/health', methods=['GET'])
+def api_health():
+    """数据库健康检查"""
+    info = get_db_info()
+    status = 'ok' if info['db_exists'] else 'degraded'
+    return jsonify({'status': status, **info})
 
 # ============ PWA Support ============
 
