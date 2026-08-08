@@ -239,14 +239,16 @@ def api_create_review():
     analysis = analyze_daily_review(content, previous_review)
 
     if continue_from and previous_review:
-        # 接续模式：更新已有复盘记录，追加新内容（带时间戳）
+        # 接续模式：更新已有复盘记录，追加新内容和新结论（带时间戳，保留旧结论）
         now_str = datetime.now().strftime('%Y-%m-%d %H:%M')
         new_content = previous_review['content'] + f'\n\n--- {now_str} 接续 ---\n\n' + content
+        new_progress = (previous_review['progress'] + f'\n\n--- {now_str} 接续分析 ---\n\n' + analysis.get('progress', '')) if previous_review.get('progress') else analysis.get('progress', '')
+        new_optimization = (previous_review['optimization'] + f'\n\n--- {now_str} 接续分析 ---\n\n' + analysis.get('optimization', '')) if previous_review.get('optimization') else analysis.get('optimization', '')
         update_daily_review(
             review_id=int(continue_from),
             content=new_content,
-            progress=analysis.get('progress', ''),
-            optimization=analysis.get('optimization', ''),
+            progress=new_progress,
+            optimization=new_optimization,
             raw_response=analysis.get('raw_response', '')
         )
         review = get_daily_review(int(continue_from))
