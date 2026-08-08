@@ -6,7 +6,7 @@ from flask import Flask, request, jsonify, render_template, send_from_directory
 from database import init_db, add_idea, update_idea, get_idea, list_ideas, delete_idea, get_stats
 from database import search_ideas, get_today_todos, complete_todo, carry_forward_overdue, get_historical_ideas
 from database import add_reminder, get_pending_reminders, get_upcoming_reminders, dismiss_reminder, dismiss_reminders_by_idea, get_reminder_count
-from database import add_daily_review, get_daily_review, list_daily_reviews, delete_daily_review
+from database import add_daily_review, get_daily_review, list_daily_reviews, delete_daily_review, update_daily_review
 from agent_engine import process_idea
 from search_engine import search_web, batch_search
 from review_engine import analyze_daily_review
@@ -236,17 +236,32 @@ def api_create_review():
         previous_review = get_daily_review(int(continue_from))
 
     analysis = analyze_daily_review(content, previous_review)
-    review_id = add_daily_review(
-        content=content,
-        progress=analysis.get('progress', ''),
-        optimization=analysis.get('optimization', ''),
-        raw_response=analysis.get('raw_response', '')
-    )
-    review = get_daily_review(review_id)
-    review['model'] = analysis.get('model', 'unknown')
-    if analysis.get('continued_from'):
-        review['continued_from'] = analysis['continued_from']
-    return jsonify(review), 201
+
+    if continue_from and previous_review:
+        # 接续模式：更新已有复盘记录，追加新内容
+        new_content = previous_review['content'] + '\n\n---\n\n' + content
+        update_daily_review(
+            review_id=int(continue_from),
+            content=new_content,
+            progress=analysis.get('progress', ''),
+            optimization=analysis.get('optimization', ''),
+            raw_response=analysis.get('raw_response', '')
+        )
+        review = get_daily_review(int(continue_from))
+        review['model'] = analysis.get('model', 'unknown')
+        review['continued_from'] = True
+        return jsonify(review), 200
+    else:
+        # 普通模式：创建新复盘
+        review_id = add_daily_review(
+            content=content,
+            progress=analysis.get('progress', ''),
+            optimization=analysis.get('optimization', ''),
+            raw_response=analysis.get('raw_response', '')
+        )
+        review = get_daily_review(review_id)
+        review['model'] = analysis.get('model', 'unknown')
+        return jsonify(review), 201
 
 @app.route('/api/reviews', methods=['GET'])
 def api_list_reviews():

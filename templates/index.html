@@ -793,22 +793,38 @@ async function loadReviewList() {
     container.innerHTML = `<div class="empty-state" style="padding:30px 20px;"><div class="icon">📋</div><h3>还没有复盘记录</h3><p>写下今天的工作内容，AI 帮你分析</p></div>`;
     return;
   }
-  container.innerHTML = reviews.map(r => `
+  container.innerHTML = reviews.map(r => {
+    const hasContinuation = r.content && r.content.includes('\n\n---\n\n');
+    const previewContent = hasContinuation ? r.content.split('\n\n---\n\n')[0] : r.content;
+    return `
     <div class="review-card" onclick="toggleReviewDetail(${r.id})">
       <div class="review-date">
         <span class="date-badge">${formatReviewDate(r.created_at)}</span>
         ${r.model ? `<span style="font-size:10px;color:var(--muted);">${r.model}</span>` : ''}
+        ${hasContinuation ? `<span style="font-size:10px;color:var(--green);font-weight:600;">📎 续</span>` : ''}
         <span style="flex:1;"></span>
         <span id="review-arrow-${r.id}">▶</span>
       </div>
-      <div style="font-size:12px;color:var(--muted);margin-top:2px;">${escapeHtml((r.content||'').slice(0,50))}${(r.content||'').length>50?'…':''}</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px;">${escapeHtml((previewContent||'').slice(0,50))}${(previewContent||'').length>50?'…':''}</div>
       <div id="review-detail-${r.id}" style="display:none;">
-        <div class="review-section"><div class="rs-label">📝 我的记录</div><div class="rs-content" style="color:var(--muted);">${escapeHtml(r.content)}</div></div>
+        <div class="review-section"><div class="rs-label">📝 我的记录</div><div class="rs-content" style="color:var(--muted);">${renderReviewContent(r.content)}</div></div>
         ${r.progress?`<div class="review-section"><div class="rs-label">🌟 今日最大收获</div><div class="rs-content">${escapeHtml(r.progress)}</div></div>`:''}
         ${r.optimization?`<div class="review-section"><div class="rs-label">💡 明日可以尝试的</div><div class="rs-content">${escapeHtml(r.optimization)}</div></div>`:''}
         <button onclick="event.stopPropagation();deleteReview(${r.id})" style="margin-top:6px;font-size:11px;padding:3px 8px;border:none;border-radius:var(--radius);background:var(--bg);color:var(--muted);cursor:pointer;">🗑️ 删除</button>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
+}
+
+function renderReviewContent(content) {
+  if (!content) return '';
+  if (!content.includes('\n\n---\n\n')) return escapeHtml(content);
+  const parts = content.split('\n\n---\n\n');
+  return parts.map((p, i) => {
+    const label = i === 0 ? '📅 初始记录' : `📎 第${i}次接续`;
+    return `<div style="margin-bottom:${i < parts.length-1 ? '8px' : '0'};${i > 0 ? 'padding-top:8px;border-top:1px dashed var(--border);margin-top:8px;' : ''}"><span style="font-size:11px;color:var(--green);font-weight:600;">${label}</span><div style="margin-top:2px;">${escapeHtml(p.trim())}</div></div>`;
+  }).join('');
+}
 }
 
 function toggleReviewDetail(id) {
@@ -830,10 +846,15 @@ async function submitReview() {
     const resp = await fetch('/api/reviews', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
     const review = await resp.json();
     if (review.id) {
-      const extra = review.continued_from ? '（已接续上次复盘）' : '';
-      showToast('✅ 复盘已保存' + extra);
+      if (review.continued_from) {
+        showToast('✅ 已接续到当天复盘');
+      } else {
+        showToast('✅ 复盘已保存');
+      }
       input.value = '';
       continueFromId = null;
+      document.getElementById('continuePanel').innerHTML = '';
+      document.getElementById('continueToggleBtn').classList.remove('active');
       loadReviewList();
     }
     else showToast('分析失败，请重试');

@@ -316,6 +316,17 @@ def add_daily_review(content, progress='', optimization='', raw_response=''):
     conn.close()
     return review_id
 
+def update_daily_review(review_id, content, progress='', optimization='', raw_response=''):
+    """更新已有复盘记录（接续时使用）"""
+    conn = get_db()
+    conn.execute(
+        "UPDATE daily_reviews SET content=?, progress=?, optimization=?, raw_response=? WHERE id=?",
+        (content, progress, optimization, raw_response, review_id)
+    )
+    conn.commit()
+    conn.close()
+    return review_id
+
 def get_daily_review(review_id):
     conn = get_db()
     row = conn.execute("SELECT * FROM daily_reviews WHERE id=?", (review_id,)).fetchone()
