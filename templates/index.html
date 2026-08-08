@@ -882,7 +882,12 @@ async function submitReview() {
 
 async function deleteReview(id) {
   if (!confirm('确认删除？')) return;
-  try { await fetch(`/api/reviews/${id}`, {method:'DELETE'}); showToast('已删除'); loadReviewList(); } catch(e) { showToast('删除失败'); }
+  try {
+    await fetch(`/api/reviews/${id}`, {method:'DELETE'});
+    showToast('已删除');
+    loadReviewList();
+    loadAllReviewsForContinue(); // 刷新接续候选列表，已删除的不再出现
+  } catch(e) { showToast('删除失败'); }
 }
 
 // ====== Notification ======
