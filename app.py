@@ -3,6 +3,7 @@ import json
 import sys
 import traceback
 from flask import Flask, request, jsonify, render_template, send_from_directory
+from datetime import datetime
 from database import init_db, add_idea, update_idea, get_idea, list_ideas, delete_idea, get_stats
 from database import search_ideas, get_today_todos, complete_todo, carry_forward_overdue, get_historical_ideas
 from database import add_reminder, get_pending_reminders, get_upcoming_reminders, dismiss_reminder, dismiss_reminders_by_idea, get_reminder_count
@@ -238,8 +239,9 @@ def api_create_review():
     analysis = analyze_daily_review(content, previous_review)
 
     if continue_from and previous_review:
-        # 接续模式：更新已有复盘记录，追加新内容
-        new_content = previous_review['content'] + '\n\n---\n\n' + content
+        # 接续模式：更新已有复盘记录，追加新内容（带时间戳）
+        now_str = datetime.now().strftime('%Y-%m-%d %H:%M')
+        new_content = previous_review['content'] + f'\n\n--- {now_str} 接续 ---\n\n' + content
         update_daily_review(
             review_id=int(continue_from),
             content=new_content,

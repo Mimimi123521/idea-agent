@@ -794,8 +794,8 @@ async function loadReviewList() {
     return;
   }
   container.innerHTML = reviews.map(r => {
-    const hasContinuation = r.content && r.content.includes('\n\n---\n\n');
-    const previewContent = hasContinuation ? r.content.split('\n\n---\n\n')[0] : r.content;
+    const hasContinuation = r.content && (/--- \d{4}-\d{2}-\d{2} \d{2}:\d{2} 接续 ---/.test(r.content) || r.content.includes('\n\n---\n\n'));
+    const previewContent = hasContinuation ? r.content.split('\n\n---')[0] : r.content;
     return `
     <div class="review-card" onclick="toggleReviewDetail(${r.id})">
       <div class="review-date">
@@ -818,13 +818,32 @@ async function loadReviewList() {
 
 function renderReviewContent(content) {
   if (!content) return '';
-  if (!content.includes('\n\n---\n\n')) return escapeHtml(content);
-  const parts = content.split('\n\n---\n\n');
-  return parts.map((p, i) => {
-    const label = i === 0 ? '📅 初始记录' : `📎 第${i}次接续`;
-    return `<div style="margin-bottom:${i < parts.length-1 ? '8px' : '0'};${i > 0 ? 'padding-top:8px;border-top:1px dashed var(--border);margin-top:8px;' : ''}"><span style="font-size:11px;color:var(--green);font-weight:600;">${label}</span><div style="margin-top:2px;">${escapeHtml(p.trim())}</div></div>`;
-  }).join('');
-}
+  // 新格式：--- YYYY-MM-DD HH:MM 接续 ---
+  const newMarker = /^--- (\d{4}-\d{2}-\d{2} \d{2}:\d{2}) 接续 ---\n\n/m;
+  // 旧格式兼容：\n\n---\n\n
+  if (!newMarker.test(content) && !content.includes('\n\n---\n\n')) return escapeHtml(content);
+
+  if (newMarker.test(content)) {
+    // 新格式解析，split 的捕获组会保留时间戳
+    const parts = content.split(/\n\n--- (\d{4}-\d{2}-\d{2} \d{2}:\d{2}) 接续 ---\n\n/);
+    let html = '';
+    html += `<div><span style="font-size:11px;color:var(--green);font-weight:600;">📅 初始记录</span><div style="margin-top:2px;">${escapeHtml(parts[0].trim())}</div></div>`;
+    for (let i = 1; i < parts.length; i += 2) {
+      const ts = parts[i];
+      const text = parts[i + 1];
+      if (text) {
+        html += `<div style="padding-top:8px;border-top:1px dashed var(--border);margin-top:8px;"><span style="font-size:11px;color:var(--green);font-weight:600;">📎 ${ts} 接续</span><div style="margin-top:2px;">${escapeHtml(text.trim())}</div></div>`;
+      }
+    }
+    return html;
+  } else {
+    // 旧格式兼容
+    const parts = content.split('\n\n---\n\n');
+    return parts.map((p, i) => {
+      const label = i === 0 ? '📅 初始记录' : `📎 第${i}次接续`;
+      return `<div style="margin-bottom:${i < parts.length-1 ? '8px' : '0'};${i > 0 ? 'padding-top:8px;border-top:1px dashed var(--border);margin-top:8px;' : ''}"><span style="font-size:11px;color:var(--green);font-weight:600;">${label}</span><div style="margin-top:2px;">${escapeHtml(p.trim())}</div></div>`;
+    }).join('');
+  }
 }
 
 function toggleReviewDetail(id) {
